@@ -1,0 +1,15 @@
+# 构建产物
+/target/
+
+# 用户数据：登录态 / 题目 / 复盘状态一律不进 git
+# （仍是纯文本、可手改、可 diff，与是否进 git 无关）
+/auth/
+/data/
+/review/
+
+# scrape “先写临时目录、成功后整体换入”用的中间目录
+/data.tmp/
+/data.old/
+
+# 编辑器 / 系统噪声
+.DS_Store

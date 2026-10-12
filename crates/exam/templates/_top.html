@@ -1,0 +1,11 @@
+<div id="top">
+  {% if let Some(summary) = summary %}
+  <div class="bar">
+    <h1>{{ summary.title }}</h1>
+    <span class="muted">题量 {{ summary.total }} · 待强化 {{ summary.weak }} · 已复盘 {{ summary.reviewed }} · 未复盘 {{ summary.fresh }}</span>
+    <button class="linklike"
+            hx-get="/reviewed?cat={{ summary.path|urlencode }}&amp;expanded={{ expanded|urlencode }}"
+            hx-target="#panel" hx-swap="innerHTML">已复盘列表（{{ summary.reviewed }} 题）</button>
+  </div>
+  {% endif %}
+</div>

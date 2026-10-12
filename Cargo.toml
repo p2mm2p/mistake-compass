@@ -1,0 +1,14 @@
+[package]
+name = "mistake-compass"
+version = "0.1.0"
+edition = "2024"
+description = "把粉笔错题抓到本地、按分类复盘的自用工具"
+
+[workspace]
+members = ["crates/login", "crates/scrape", "crates/exam"]
+
+[dependencies]
+clap = { version = "4.6", features = ["derive", "error-context"] }
+exam = { path = "crates/exam" }
+login = { path = "crates/login" }
+scrape = { path = "crates/scrape" }

@@ -1,0 +1,27 @@
+{% import "_macros.html" as m %}
+<section class="reviewed">
+  <h2>已复盘列表：{{ name }}（{{ rows.len() }} 题）</h2>
+  {% if rows.is_empty() %}
+  <p class="muted">本分类还没有已复盘的题。</p>
+  {% else %}
+  <table>
+    <tr><th>题号</th><th>来源</th><th>状态</th><th></th></tr>
+    {% for row in rows %}
+    <tr>
+      <td class="muted">#{{ row.num }}</td>
+      <td>{{ row.source }}</td>
+      <td>{{ m::badge(row.state) }}</td>
+      <td>
+        <button class="linklike"
+                hx-get="/mark?cat={{ cat|urlencode }}&amp;fb={{ row.fb }}&amp;to={{ "未复盘"|urlencode }}&amp;from=reviewed&amp;expanded={{ expanded|urlencode }}"
+                hx-target="#panel" hx-swap="innerHTML">改回未复盘</button>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+  <p>
+    <button hx-get="/select?cat={{ cat|urlencode }}&amp;expanded={{ expanded|urlencode }}"
+            hx-target="#panel" hx-swap="innerHTML">返回做题</button>
+  </p>
+</section>

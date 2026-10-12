@@ -1,0 +1,280 @@
+/* 单页布局：左抽屉分类树 + 右面板做题，全部局部替换。 */
+
+:root {
+  --ink: #24292f;
+  --muted: #6b7280;
+  --line: #e3e6ea;
+  --bg: #f5f6f8;
+  --card: #ffffff;
+  --ok: #1a7f37;
+  --ok-bg: #d9eddf;
+  --weak: #b42318;
+  --weak-bg: #fbdcdc;
+  --new-bg: #eceef1;
+  --sel: #e6eefc;
+  --link: #0b62c4;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+.shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#drawer {
+  width: 300px;
+  min-width: 300px;
+  padding: 10px 6px;
+  border-right: 1px solid var(--line);
+  background: var(--card);
+  overflow: auto;
+}
+
+#drawer .node {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  user-select: none;
+}
+
+#drawer .node:hover { background: #f2f3f5; }
+#drawer .node.sel { background: var(--sel); font-weight: 600; }
+
+#drawer .arrow {
+  display: inline-block;
+  width: 12px;
+  flex: none;
+  color: #9ca3af;
+}
+
+#drawer .icon {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  fill: #8a94a0;
+}
+#drawer .dir .icon { fill: #d9a441; }
+#drawer .file .icon { fill: #9aa4b0; }
+#drawer .file .icon .fold {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 1.1;
+}
+#drawer .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+#top {
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+}
+
+#top .bar {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+}
+
+#top h1 { font-size: 20px; margin: 0; }
+
+#panel { padding: 22px; flex: 1; }
+
+.muted { color: var(--muted); font-size: 13px; font-weight: 400; }
+.hint { color: var(--muted); }
+
+.badge {
+  padding: 1px 8px;
+  border-radius: 9px;
+  font-size: 12px;
+  margin-left: 6px;
+}
+.badge-new { background: var(--new-bg); }
+.badge-ok { background: var(--ok-bg); color: var(--ok); }
+.badge-weak { background: var(--weak-bg); color: var(--weak); }
+
+.pill {
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  background: #eef1f6;
+  margin-left: 6px;
+}
+
+.qhead {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.qbar { margin-left: auto; display: flex; gap: 8px; }
+
+button {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+  font: inherit;
+  cursor: pointer;
+}
+button:hover { background: #f4f5f7; }
+button:disabled { opacity: .4; cursor: default; }
+
+.linklike {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--link);
+}
+
+.material {
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fafbfc;
+  overflow-x: auto;
+}
+
+.stem { overflow-x: auto; }
+.stem img, .material img, .opt-text img, .solution img { max-width: 100%; }
+.stem table, .material table, .solution table { border-collapse: collapse; }
+.stem td, .stem th, .material td, .material th, .solution td, .solution th {
+  border: 1px solid var(--line);
+  padding: 4px 8px;
+}
+
+.answers { margin-top: 12px; }
+
+.opt {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  margin: 2px 0;
+  text-align: left;
+  border: 1px solid transparent;
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  transition: background-color .12s, border-color .12s;
+}
+
+/* 选项有“指针在哪”和“选没选中”两件事，必须各走一条通道，否则多选时混作一谈：
+   指针 → 整行底色与左条；选中 → 字母徽章反白 + 整行加深 + 字体加粗。 */
+.opt:hover {
+  background: var(--sel);
+  border-color: #c3d5f1;
+  border-left-color: var(--link);
+}
+
+.opt .key {
+  /* 用 flex 居中，而不是 line-height 居中。
+     行高 1.7em = 23.8px 是非整数，靠 line-height 居中时基线会被吸附到整像素，
+     字母整体上移约 1px；flex 居中实测偏差 0.00px。 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.7em;
+  height: 1.7em;
+  line-height: 1;
+  border-radius: 999px;
+  background: #eef1f6;
+  color: #4b5563;
+  font-weight: 700;
+  transition: background-color .12s, color .12s, box-shadow .12s;
+}
+/* 悬停：徽章转成描边，与“选中”的实心区分开。 */
+.opt:hover .key {
+  background: #fff;
+  color: var(--link);
+  box-shadow: 0 0 0 1.5px var(--link) inset;
+}
+
+.opt-multi {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.opt-multi input {
+  /* 表单控件默认 13.33px，会让下面的 em 与徽章对不上；显式继承后两边同一把尺子。 */
+  font: inherit;
+  accent-color: var(--link);
+  width: 15px;
+  height: 15px;
+  /* 复选框与字母徽章同高居中：徽章高 1.7em，把 15px 的框放进徽章中线。 */
+  margin-top: calc((1.7em - 15px) / 2);
+}
+/* 选中：徽章实心反白。这条不依赖 `:has()`，浏览器不支持时主信号仍在。 */
+.opt-multi input:checked ~ .key {
+  background: var(--link);
+  color: #fff;
+  box-shadow: none;
+}
+.opt-multi:has(input:checked) {
+  background: #cddffa;
+  border-color: #7ea9ee;
+  border-left-color: var(--link);
+  font-weight: 600;
+}
+/* 已选又悬停：再深一档，四个状态两两可辨。 */
+.opt-multi:has(input:checked):hover { background: #bed5f7; }
+
+.submit { margin-top: 10px; }
+
+.feedback {
+  margin-top: 14px;
+  padding: 12px 16px;
+  border: 1px solid var(--ok-bg);
+  border-radius: 8px;
+  background: #f4f9f5;
+}
+.feedback.bad { border-color: var(--weak-bg); background: #fdf5f5; }
+.feedback .verdict { font-weight: 700; margin: 0 0 6px; }
+.feedback .solution { margin-top: 8px; }
+
+.qfoot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.done {
+  padding: 30px;
+  border: 1px dashed #cbd0d6;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.reviewed h2 { font-size: 18px; }
+.reviewed table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.reviewed td, .reviewed th {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="shell">
+  {% include "_drawer.html" %}
+  <main id="main">
+    {% include "_top.html" %}
+    <div id="panel">
+      {% include "panel_start.html" %}
+    </div>
+  </main>
+</div>
+{% endblock %}

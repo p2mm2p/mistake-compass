@@ -1,0 +1,88 @@
+{% import "_macros.html" as m %}
+<article class="qcard" id="qcard">
+  {% if let Some(q) = view %}
+  <header class="qhead">
+    <span class="muted">第 {{ q.position }} / {{ q.queue_len }} 题</span>
+    <span class="pill">{{ q.kind }}</span>
+    {{ m::badge(q.state) }}
+    <span class="muted">难度 {{ q.difficulty }} · 正确率 {{ q.ratio }}%</span>
+    <span class="qbar">
+      <button hx-get="/mark?cat={{ q.cat|urlencode }}&amp;fb={{ q.fb }}&amp;to={{ "已复盘"|urlencode }}"
+              hx-target="#panel" hx-swap="innerHTML">设为已复盘</button>
+    </span>
+  </header>
+
+  {% if let Some(material) = q.material %}
+  <section class="material">{{ material|safe }}</section>
+  {% endif %}
+
+  <section class="stem">{{ q.stem|safe }}</section>
+
+  {% if q.options.is_empty() %}
+  <p class="muted">该题没有选项。</p>
+  {% else %}
+  <form class="answers" hx-post="/answer?cat={{ q.cat|urlencode }}&amp;fb={{ q.fb }}"
+        hx-target="#panel" hx-swap="innerHTML">
+    {% if q.multi %}
+    <div class="opts">
+      {% for o in q.options %}
+      <label class="opt opt-multi">
+        <input type="checkbox" name="answers" value="{{ o.key }}">
+        <span class="key">{{ o.key }}</span><span class="opt-text">{{ o.text|safe }}</span>
+      </label>
+      {% endfor %}
+    </div>
+    <button class="submit" type="submit">提交答案</button>
+    {% else %}
+    <div class="opts">
+      {% for o in q.options %}
+      <button class="opt opt-single" type="submit" name="answers" value="{{ o.key }}">
+        <span class="key">{{ o.key }}</span><span class="opt-text">{{ o.text|safe }}</span>
+      </button>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </form>
+  {% endif %}
+
+  {% if let Some(feedback) = q.feedback %}
+  <div class="feedback {% if feedback.correct %}ok{% else %}bad{% endif %}">
+    <p class="verdict">{% if feedback.correct %}回答正确{% else %}回答错误{% endif %}</p>
+    <p>你的作答：<b>{{ feedback.picked }}</b> · 正确答案：<b>{{ feedback.expected }}</b></p>
+    <div class="solution">{{ q.solution|safe }}</div>
+    <p class="muted">状态已更新为「{{ feedback.state.label() }}」</p>
+  </div>
+  {% else if let Some(last) = q.last %}
+  <p class="muted">上次作答：{{ last.answer }}（{{ last.result }}）</p>
+  {% endif %}
+
+  <footer class="qfoot">
+    {% if let Some(prev) = q.prev %}
+    <button hx-get="/q?cat={{ q.cat|urlencode }}&amp;fb={{ prev }}"
+            hx-target="#panel" hx-swap="innerHTML">上一题</button>
+    {% else %}
+    <button disabled>上一题</button>
+    {% endif %}
+    <span class="muted">第 {{ q.position }} / {{ q.queue_len }} 题（未复盘 + 待强化队列）</span>
+    {% if let Some(next) = q.next %}
+    <button hx-get="/q?cat={{ q.cat|urlencode }}&amp;fb={{ next }}"
+            hx-target="#panel" hx-swap="innerHTML">下一题</button>
+    {% else %}
+    <button disabled>下一题</button>
+    {% endif %}
+    <span class="muted" style="margin-left:auto">来源：{{ q.source }}</span>
+  </footer>
+  {% else %}
+  {% if let Some(done) = done %}
+  <div class="done">
+    <h2>本分类没有待复盘的题</h2>
+    <p class="muted">共 {{ done.total }} 题，全部已复盘。</p>
+    <button class="linklike"
+            hx-get="/reviewed?cat={{ done.cat|urlencode }}&amp;expanded={{ done.expanded|urlencode }}"
+            hx-target="#panel" hx-swap="innerHTML">查看已复盘列表（{{ done.reviewed }} 题）</button>
+  </div>
+  {% else %}
+  <p class="muted">该分类没有直接名下题目，请从左侧选择子分类。</p>
+  {% endif %}
+  {% endif %}
+</article>
