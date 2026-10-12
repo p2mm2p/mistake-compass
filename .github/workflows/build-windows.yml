@@ -1,0 +1,30 @@
+name: 构建 Windows 可执行文件
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    # 直接用 Windows runner 自带的 MSVC + Windows SDK，避免本机交叉编译时
+    # aws-lc-sys 找不到 windows.h 的问题。
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Rust 工具链
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: 缓存依赖
+        uses: Swatinem/rust-cache@v2
+
+      - name: 编译 release
+        run: cargo build --release --target x86_64-pc-windows-msvc --package mistake-compass
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: mistake-compass-windows-x86_64
+          path: target/x86_64-pc-windows-msvc/release/mistake-compass.exe
