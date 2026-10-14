@@ -8,13 +8,14 @@
     <span class="muted">难度 {{ q.difficulty }} · 正确率 {{ q.ratio }}%</span>
     <span class="qbar">
       <button type="button" class="board-enter" data-board="enter" title="画板" aria-label="画板">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-        </svg>
+        {% include "_icon_board.html" %}
       </button>
-      <button type="button" class="board-clear" data-board="clear">清空画板</button>
-      <button type="button" class="board-exit" data-board="exit">退出画板</button>
+      <button type="button" class="board-clear" data-board="clear" title="清空画板" aria-label="清空画板">
+        {% include "_icon_clear.html" %}
+      </button>
+      <button type="button" class="board-exit" data-board="exit" title="退出画板" aria-label="退出画板">
+        {% include "_icon_exit.html" %}
+      </button>
       <button hx-get="/mark?cat={{ q.cat|urlencode }}&amp;fb={{ q.fb }}&amp;to={{ "已复盘"|urlencode }}"
               hx-target="#panel" hx-swap="innerHTML">设为已复盘</button>
     </span>
