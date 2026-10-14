@@ -2,7 +2,7 @@
 <article class="qcard" id="qcard">
   {% if let Some(q) = view %}
   <header class="qhead">
-    <span class="muted">第 {{ q.position }} / {{ q.queue_len }} 题</span>
+    <span class="muted">第 {{ q.position }} / {{ q.total }} 题</span>
     <span class="pill">{{ q.kind }}</span>
     {{ m::badge(q.state) }}
     <span class="muted">难度 {{ q.difficulty }} · 正确率 {{ q.ratio }}%</span>
@@ -72,7 +72,7 @@
     {% else %}
     <button disabled>上一题</button>
     {% endif %}
-    <span class="muted">第 {{ q.position }} / {{ q.queue_len }} 题（未复盘 + 待强化队列）</span>
+    <span class="muted">第 {{ q.position }} / {{ q.total }} 题</span>
     {% if let Some(next) = q.next %}
     <button hx-get="/q?cat={{ q.cat|urlencode }}&amp;fb={{ next }}"
             hx-target="#panel" hx-swap="innerHTML">下一题</button>

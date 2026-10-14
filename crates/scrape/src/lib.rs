@@ -127,6 +127,10 @@ async fn run_async(root: &Path, options: Options) -> Result<(), String> {
 
 // ---------------------------------------------------------------- 抓取
 
+/// 抓取分类树。
+///
+/// 错题列表的官方默认顺序是“新添加在前”（`order=0` 与 `order=desc` 等价），
+/// 抓取与落盘都保持这个顺序、不再重排。
 async fn fetch_tree(client: &client::Client) -> Result<serde_json::Value, String> {
     let response = client
         .get(

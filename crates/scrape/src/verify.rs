@@ -1,6 +1,6 @@
 //! 写盘自检：在换入 `data/` 之前，重新解析刚写出的临时目录。
 //!
-//! 这里只检查“发射器是否写坏了自己刚写的东西”——文件可被 YAML 解析、题数与 `fb`/`num`
+//! 这里只检查“发射器是否写坏了自己刚写的东西”——文件可被 YAML 解析、题数与 `fb`
 //! 对得上。完整的不变量校验（标量形态、字节卫生等）由 `exam --check` 负责，不在这里重复。
 
 use std::collections::HashSet;
@@ -56,17 +56,6 @@ pub fn self_check(
                 .get("fb")
                 .and_then(Value::as_i64)
                 .ok_or_else(|| format!("自检失败：{} 第 {} 题缺 fb", path.display(), index + 1))?;
-            let num = item
-                .get("num")
-                .and_then(Value::as_i64)
-                .ok_or_else(|| format!("自检失败：{} 第 {} 题缺 num", path.display(), index + 1))?;
-            if num != index as i64 + 1 {
-                return Err(format!(
-                    "自检失败：{} 第 {} 题的 num 是 {num}",
-                    path.display(),
-                    index + 1
-                ));
-            }
             if !seen.insert(fb) {
                 return Err(format!("自检失败：fb {fb} 重复"));
             }
@@ -106,11 +95,7 @@ mod tests {
     #[test]
     fn accepts_well_formed_files() {
         let dir = tempdir("ok");
-        let file = write(
-            &dir,
-            "甲.yaml",
-            "questions:\n- fb: 1\n  num: 1\n  stem: x\n",
-        );
+        let file = write(&dir, "甲.yaml", "questions:\n- fb: 1\n  stem: x\n");
         self_check(&dir, &[file], 1).expect("合法文件应通过");
         std::fs::remove_dir_all(&dir).ok();
     }
@@ -118,16 +103,8 @@ mod tests {
     #[test]
     fn rejects_duplicate_fb_across_files() {
         let dir = tempdir("dup");
-        let first = write(
-            &dir,
-            "甲.yaml",
-            "questions:\n- fb: 7\n  num: 1\n  stem: x\n",
-        );
-        let second = write(
-            &dir,
-            "乙.yaml",
-            "questions:\n- fb: 7\n  num: 1\n  stem: y\n",
-        );
+        let first = write(&dir, "甲.yaml", "questions:\n- fb: 7\n  stem: x\n");
+        let second = write(&dir, "乙.yaml", "questions:\n- fb: 7\n  stem: y\n");
         let error = self_check(&dir, &[first, second], 2).expect_err("重复 fb 应被拒");
         assert!(error.contains("fb 7 重复"), "{error}");
         std::fs::remove_dir_all(&dir).ok();
@@ -144,11 +121,7 @@ mod tests {
     #[test]
     fn rejects_wrong_question_total() {
         let dir = tempdir("total");
-        let file = write(
-            &dir,
-            "甲.yaml",
-            "questions:\n- fb: 1\n  num: 1\n  stem: x\n",
-        );
+        let file = write(&dir, "甲.yaml", "questions:\n- fb: 1\n  stem: x\n");
         assert!(self_check(&dir, &[file], 2).is_err());
         std::fs::remove_dir_all(&dir).ok();
     }

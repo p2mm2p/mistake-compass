@@ -66,7 +66,6 @@ pub struct LastAnswer {
 /// 做题面板里的题。
 pub struct QuestionView {
     pub fb: i64,
-    pub num: u32,
     pub cat: String,
     pub kind: &'static str,
     pub state: State,
@@ -78,15 +77,17 @@ pub struct QuestionView {
     pub solution: String,
     pub options: Vec<OptionView>,
     pub multi: bool,
+    /// 在数组里的位置（下标 + 1）。
     pub position: usize,
-    pub queue_len: usize,
+    /// 形成列表时的可做题数（M）。
+    pub total: usize,
     pub prev: Option<i64>,
     pub next: Option<i64>,
     pub feedback: Option<Feedback>,
     pub last: Option<LastAnswer>,
 }
 
-/// 队列走空时的完成态。
+/// 没有可做题时的完成态。
 pub struct DoneView {
     pub cat: String,
     pub expanded: String,
@@ -98,7 +99,8 @@ pub struct DoneView {
 #[derive(Clone)]
 pub struct ReviewedRow {
     pub fb: i64,
-    pub num: u32,
+    /// 在数组里的位置（下标 + 1）。
+    pub position: usize,
     pub source: String,
     pub state: State,
 }
@@ -247,94 +249,92 @@ pub fn summary(corpus: &Corpus, review: &Review, path: &str) -> Option<Summary> 
     })
 }
 
-/// 做题队列：未复盘 + 待强化，待强化优先。
-pub fn queue(corpus: &Corpus, review: &Review, path: &str) -> Vec<i64> {
-    let Some(category) = corpus.category(path) else {
-        return Vec::new();
-    };
+/// 打开分类时排好的做题数组。
+///
+/// 顺序：待强化在前，未复盘随后，已复盘最后，每段内部按题序；生成后不再调整，
+/// 因此“第 N / M 题”的编号在作答期间不变。`total` 是形成列表时的可做题数。
+#[derive(Debug, Clone)]
+pub struct Order {
+    pub cat: String,
+    pub ids: Vec<i64>,
+    pub total: usize,
+}
+
+/// 按当前状态排出该分类的数组；分类不存在时返回 `None`。
+pub fn build_order(corpus: &Corpus, review: &Review, path: &str) -> Option<Order> {
+    let category = corpus.category(path)?;
     let mut weak = Vec::new();
     let mut fresh = Vec::new();
+    let mut reviewed = Vec::new();
     for question in &category.questions {
         match review.state(question.fb) {
             State::Weak => weak.push(question.fb),
             State::New => fresh.push(question.fb),
-            State::Reviewed => {}
+            State::Reviewed => reviewed.push(question.fb),
         }
     }
-    weak.into_iter().chain(fresh).collect()
+    let total = weak.len() + fresh.len();
+    let ids = weak.into_iter().chain(fresh).chain(reviewed).collect();
+    Some(Order {
+        cat: path.to_string(),
+        ids,
+        total,
+    })
 }
 
-/// 本分类已复盘的题，按文件内顺序。
-pub fn reviewed_rows(corpus: &Corpus, review: &Review, path: &str) -> Vec<ReviewedRow> {
-    let Some(category) = corpus.category(path) else {
-        return Vec::new();
-    };
-    category
-        .questions
+/// 可做题：还没标记为已复盘的题。
+fn workable(review: &Review, fb: i64) -> bool {
+    review.state(fb) != State::Reviewed
+}
+
+/// 本分类已复盘的题：过滤数组，按数组顺序显示；编号取数组下标。
+pub fn reviewed_rows(corpus: &Corpus, review: &Review, order: &Order) -> Vec<ReviewedRow> {
+    order
+        .ids
         .iter()
-        .filter(|question| review.state(question.fb) == State::Reviewed)
-        .map(|question| ReviewedRow {
-            fb: question.fb,
-            num: question.num,
-            source: question.source.clone().unwrap_or_default(),
-            state: State::Reviewed,
+        .enumerate()
+        .filter_map(|(at, &fb)| {
+            if review.state(fb) != State::Reviewed {
+                return None;
+            }
+            let question = corpus.question(fb)?;
+            Some(ReviewedRow {
+                fb,
+                position: at + 1,
+                source: question.source.clone().unwrap_or_default(),
+                state: State::Reviewed,
+            })
         })
         .collect()
 }
 
 /// 组装做题面板。
 ///
-/// `anchor` 是“客户端当前在看的那一题”：作答后即使该题已离开队列，也要继续显示，
-/// 否则面板会顺移到下一题，反馈错位、再点“下一题”还会跳过一题。
+/// `anchor` 是“客户端当前在看的那一题”：作答后即使该题已不再可做，也要继续显示，
+/// 编号仍是它在数组里的位置；上一题 / 下一题在数组里跳过已复盘的题。
 pub fn question_view(
     corpus: &Corpus,
     review: &Review,
-    path: &str,
+    order: &Order,
     anchor: Option<i64>,
     feedback: Option<Feedback>,
 ) -> Option<QuestionView> {
-    let category = corpus.category(path)?;
-    if category.questions.is_empty() {
-        return None;
-    }
-    let pending = queue(corpus, review, path);
-    let fb = match anchor {
-        Some(fb) if corpus.question(fb).is_some() => fb,
-        _ => *pending.first()?,
+    let at = match anchor.and_then(|fb| order.ids.iter().position(|&id| id == fb)) {
+        Some(at) => at,
+        None => order.ids.iter().position(|&fb| workable(review, fb))?,
     };
+    let fb = order.ids[at];
     let question = corpus.question(fb)?;
-
-    // 位置与邻项都按“当前队列”算；锚定的题已离开队列时，用题号插回原位。
-    let (position, queue_len, prev, next) = match pending.iter().position(|&item| item == fb) {
-        Some(at) => (
-            at,
-            pending.len(),
-            at.checked_sub(1)
-                .and_then(|before| pending.get(before))
-                .copied(),
-            pending.get(at + 1).copied(),
-        ),
-        None => {
-            let before = pending
-                .iter()
-                .take_while(|&&item| {
-                    corpus
-                        .question(item)
-                        .is_some_and(|other| other.num < question.num)
-                })
-                .count();
-            (
-                before,
-                // 已离开队列的题仍在屏上，计数器把该题算进去，避免出现“第 1 / 0 题”。
-                pending.len() + 1,
-                before
-                    .checked_sub(1)
-                    .and_then(|at| pending.get(at))
-                    .copied(),
-                pending.get(before).copied(),
-            )
-        }
-    };
+    // 上一题 / 下一题：在数组里往前 / 往后找最近的、不是已复盘的题。
+    let prev = order.ids[..at]
+        .iter()
+        .rev()
+        .find(|&&id| workable(review, id))
+        .copied();
+    let next = order.ids[at + 1..]
+        .iter()
+        .find(|&&id| workable(review, id))
+        .copied();
 
     // 判断题没有选项字段，界面给出“对 / 错”二选一。
     let options: Vec<OptionView> =
@@ -366,8 +366,7 @@ pub fn question_view(
 
     Some(QuestionView {
         fb,
-        num: question.num,
-        cat: path.to_string(),
+        cat: order.cat.clone(),
         kind: question.kind.label(),
         state: review.state(fb),
         difficulty: question
@@ -384,8 +383,8 @@ pub fn question_view(
         solution: question.solution.clone(),
         options,
         multi: question.kind == QuestionType::Multi,
-        position: position + 1,
-        queue_len,
+        position: at + 1,
+        total: order.total,
         prev,
         next,
         feedback,
@@ -396,7 +395,12 @@ pub fn question_view(
 /// 完成态：本分类没有待复盘的题。
 pub fn done_view(corpus: &Corpus, review: &Review, path: &str, expanded: &str) -> Option<DoneView> {
     let category = corpus.category(path)?;
-    if category.questions.is_empty() || !queue(corpus, review, path).is_empty() {
+    if category.questions.is_empty()
+        || category
+            .questions
+            .iter()
+            .any(|question| workable(review, question.fb))
+    {
         return None;
     }
     let reviewed = category
@@ -435,12 +439,12 @@ mod tests {
         std::fs::write(path, text).expect("写测试文件失败");
     }
 
-    fn question(fb: i64, num: usize) -> String {
+    fn question(fb: i64, n: usize) -> String {
         format!(
-            "- fb: {fb}\n  num: {num}\n  type: 单选\n  difficulty: 4\n  answer: C\n  \
-             my_answer: null\n  correct_ratio: 50.0\n  source: 某考试第{num}题\n  keypoints: null\n  \
-             material: null\n  stem: |-\n    <p>题干 {num}</p>\n  options:\n    - 甲\n    - 乙\n    - 丙\n    - 丁\n  \
-             solution: |-\n    <p>解析 {num}</p>\n"
+            "- fb: {fb}\n  type: 单选\n  difficulty: 4\n  answer: C\n  \
+             my_answer: null\n  correct_ratio: 50.0\n  source: 某考试第{n}题\n  keypoints: null\n  \
+             material: null\n  stem: |-\n    <p>题干 {n}</p>\n  options:\n    - 甲\n    - 乙\n    - 丙\n    - 丁\n  \
+             solution: |-\n    <p>解析 {n}</p>\n"
         )
     }
 
@@ -465,77 +469,94 @@ mod tests {
     }
 
     #[test]
-    fn queue_puts_weak_first_and_skips_reviewed() {
-        let (root, corpus) = corpus_with("queue", "甲", 3);
-        std::fs::create_dir_all(root.join("review")).ok();
+    fn order_is_weak_then_new_then_reviewed() {
+        let (root, corpus) = corpus_with("order", "甲", 3);
         let mut review = Review::load(&root).expect("载入应成功");
         review.answer(101, false, "A", "x".into()).unwrap(); // 待强化
         review.answer(102, true, "C", "x".into()).unwrap(); // 已复盘
-        assert_eq!(queue(&corpus, &review, "甲"), vec![101, 103]);
+
+        let order = build_order(&corpus, &review, "甲").expect("分类存在时应能排序");
+        assert_eq!(order.ids, vec![101, 103, 102]);
+        assert_eq!(
+            order.total, 2,
+            "M 是形成列表时的可做题数（分类题数 - 初始已复盘数）"
+        );
         std::fs::remove_dir_all(&root).ok();
     }
 
     #[test]
-    fn anchor_keeps_answered_question_visible() {
+    fn answered_question_keeps_its_position_and_neighbors() {
+        // 打开分类时 103 是待强化、101/102 未复盘 → 数组 [103, 101, 102]。
+        // 102 答对后仍留在原位：编号与邻项都不跳。
         let (root, corpus) = corpus_with("anchor", "甲", 3);
         let mut review = Review::load(&root).expect("载入应成功");
-        review.answer(101, true, "C", "x".into()).unwrap();
-        // 队列首题答对后离队，但面板仍应停在该题上，并给出正确的邻项。
-        let view = question_view(&corpus, &review, "甲", Some(101), None).expect("应渲染出题");
-        assert_eq!(view.fb, 101);
-        assert_eq!(view.position, 1);
-        assert_eq!(
-            view.queue_len, 3,
-            "计数器把在屏的这题算上，不能出现「第 1 / 2 题」"
-        );
-        assert_eq!(view.next, Some(102));
-        assert_eq!(view.prev, None);
+        review.answer(103, false, "A", "x".into()).unwrap(); // 待强化
+        let order = build_order(&corpus, &review, "甲").expect("应能排好");
+        review.answer(102, true, "C", "x".into()).unwrap(); // 就地变已复盘
+
+        let view = question_view(&corpus, &review, &order, Some(102), None).expect("应渲染出题");
+        assert_eq!(view.fb, 102);
+        assert_eq!(view.position, 3);
+        assert_eq!(view.total, 3);
+        assert_eq!(view.prev, Some(101));
+        assert_eq!(view.next, None);
+
+        // 不带锚定时看第一道可做题：103（待强化排最前）。
+        let first = question_view(&corpus, &review, &order, None, None).expect("应渲染出题");
+        assert_eq!(first.fb, 103);
+        assert_eq!(first.position, 1);
         std::fs::remove_dir_all(&root).ok();
     }
 
     #[test]
-    fn anchor_on_the_last_question_leaves_next_empty() {
-        let (root, corpus) = corpus_with("anchor-last", "甲", 3);
+    fn prev_and_next_skip_reviewed() {
+        let (root, corpus) = corpus_with("skip", "甲", 3);
         let mut review = Review::load(&root).expect("载入应成功");
-        review.answer(103, true, "C", "x".into()).unwrap();
-        let view = question_view(&corpus, &review, "甲", Some(103), None).expect("应渲染出题");
-        assert_eq!(view.position, 3);
-        assert_eq!(view.prev, Some(102));
+        let order = build_order(&corpus, &review, "甲").expect("应能排好");
+        review.answer(102, true, "C", "x".into()).unwrap(); // 中间一题已复盘
+
+        let view = question_view(&corpus, &review, &order, Some(103), None).expect("应渲染出题");
+        assert_eq!(view.prev, Some(101), "上一题跳过已复盘的 102");
         assert_eq!(view.next, None);
         std::fs::remove_dir_all(&root).ok();
     }
 
     #[test]
-    fn without_anchor_the_first_pending_question_shows() {
+    fn without_anchor_the_first_workable_question_shows() {
         let (root, corpus) = corpus_with("first", "甲", 3);
         let review = Review::load(&root).expect("载入应成功");
-        let view = question_view(&corpus, &review, "甲", None, None).expect("应渲染出题");
+        let order = build_order(&corpus, &review, "甲").expect("应能排好");
+        let view = question_view(&corpus, &review, &order, None, None).expect("应渲染出题");
         assert_eq!(view.fb, 101);
-        assert_eq!(view.queue_len, 3);
+        assert_eq!(view.position, 1);
+        assert_eq!(view.total, 3);
         std::fs::remove_dir_all(&root).ok();
     }
 
     #[test]
-    fn empty_queue_yields_done_view() {
+    fn all_reviewed_yields_done_view() {
         let (root, corpus) = corpus_with("done", "甲", 1);
         let mut review = Review::load(&root).expect("载入应成功");
+        let order = build_order(&corpus, &review, "甲").expect("应能排好");
         assert!(done_view(&corpus, &review, "甲", "").is_none());
         review.answer(101, true, "C", "x".into()).unwrap();
         let done = done_view(&corpus, &review, "甲", "").expect("应给出完成态");
         assert_eq!(done.total, 1);
         assert_eq!(done.reviewed, 1);
-        assert!(question_view(&corpus, &review, "甲", None, None).is_none());
+        assert!(question_view(&corpus, &review, &order, None, None).is_none());
         std::fs::remove_dir_all(&root).ok();
     }
 
     #[test]
-    fn reviewed_rows_only_include_reviewed() {
+    fn reviewed_rows_use_order_positions() {
         let (root, corpus) = corpus_with("reviewed", "甲", 3);
         let mut review = Review::load(&root).expect("载入应成功");
+        let order = build_order(&corpus, &review, "甲").expect("应能排好");
         review.answer(102, true, "C", "x".into()).unwrap();
-        let rows = reviewed_rows(&corpus, &review, "甲");
+        let rows = reviewed_rows(&corpus, &review, &order);
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].fb, 102);
+        assert_eq!(rows[0].position, 2);
         std::fs::remove_dir_all(&root).ok();
     }
 
@@ -675,14 +696,15 @@ mod tests {
         let root = tempdir("judge");
         let dir = root.join("data");
         std::fs::create_dir_all(&dir).unwrap();
-        let text = "- fb: 501\n  num: 1\n  type: 判断\n  difficulty: 5\n  answer: 错\n  \
+        let text = "- fb: 501\n  type: 判断\n  difficulty: 5\n  answer: 错\n  \
                     my_answer: null\n  correct_ratio: 16.34\n  source: 某考试第2题\n  keypoints: null\n  \
                     material: null\n  stem: |-\n    <p>判断</p>\n  options: null\n  \
                     solution: |-\n    <p>解析</p>\n";
         write(&dir, "甲.yaml", &format!("questions:\n{text}"));
         let corpus = crate::data::load(&dir).expect("载入应成功");
         let review = Review::load(&root).expect("载入应成功");
-        let view = question_view(&corpus, &review, "甲", None, None).expect("应渲染出题");
+        let order = build_order(&corpus, &review, "甲").expect("应能排好");
+        let view = question_view(&corpus, &review, &order, None, None).expect("应渲染出题");
         let keys: Vec<&str> = view.options.iter().map(|o| o.key.as_str()).collect();
         assert_eq!(keys, vec!["对", "错"]);
         assert!(!view.multi, "判断是单值二选一");
