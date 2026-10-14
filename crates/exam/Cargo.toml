@@ -1,15 +1,15 @@
 [package]
 name = "exam"
-version = "0.1.0"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
 description = "本地复盘页面：左抽屉分类树 + 右面板做题，全程 htmx 局部替换"
 
 [dependencies]
-askama = "0.16"
-axum = "0.8"
-chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+askama = { workspace = true }
+axum = { workspace = true }
+chrono = { workspace = true, features = ["clock", "std"] }
 # 多选表单是重复键，axum 的 Form 提取器收不了，手工解析。
-form_urlencoded = "1"
-serde = { version = "1", features = ["derive"] }
-serde_norway = "0.9"
-tokio = { version = "1", features = ["macros", "net", "rt-multi-thread", "signal"] }
+form_urlencoded = { workspace = true }
+serde = { workspace = true }
+serde_norway = { workspace = true }
+tokio = { workspace = true, features = ["net", "signal"] }

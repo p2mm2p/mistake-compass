@@ -1,13 +1,13 @@
 [package]
 name = "login"
-version = "0.1.0"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
 description = "拉起可见浏览器完成人工登录，把登录态写成 storageState 文件"
 
 [dependencies]
-chromiumoxide = "0.9.1"
-futures = "0.3"
+chromiumoxide = { workspace = true }
+futures = { workspace = true }
 # 只用来做“现有登录态是否仍有效”的探活；chromiumoxide 本身也依赖 reqwest。
-reqwest = "0.13"
-serde_json = "1"
-tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
+reqwest = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true, features = ["time"] }
