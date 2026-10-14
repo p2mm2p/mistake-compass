@@ -7,8 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
 - v0.2.0 提供画板功能。
 - 当界面无法容纳材料和题目时，材料变为可滚动。
+
+### Changed
+
+- 题序保持抓取顺序，即官方默认的“新添加在前”。
+- 做题面板的“第 N / M 题”在作答过程中不再变化；上一题 / 下一题跳过已复盘的题。
+
+### Removed
+
+- 移除数据文件中的 `num` 字段。
 
 ## [0.1.0] - 2026-10-13
 

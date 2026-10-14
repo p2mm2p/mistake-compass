@@ -1,6 +1,6 @@
 //! YAML 发射器：把记录写成“一文件一最深分类”的目录树。
 //!
-//! 排版由这里手工决定（`|-` 块标量、缺值 `null`、空列表 `null`、文件内按卷内题号排序），
+//! 排版由这里手工决定（`|-` 块标量、缺值 `null`、空列表 `null`、文件内保持抓取顺序），
 //! 不走 YAML 库的序列化器。
 //!
 //! 分类名逐字取自上游：名字里的半角 `/` 落盘时就是目录分隔符，不做替换、不改写。
@@ -38,12 +38,11 @@ pub fn write_tree(
 
     let mut files = Vec::new();
     for (index, node) in nodes.iter().enumerate() {
-        let members = &mut by_node[index];
+        let members = &by_node[index];
         if members.is_empty() {
             continue;
         }
-        // 错题本不是完整试卷：卷内题号只在同一分类内有意义，缺号的排在最后。
-        members.sort_by_key(|&at| (records[at].paper_num.unwrap_or(i64::MAX), records[at].fb));
+        // 不重排：接口默认“新添加在前”，抓取顺序就是题序。
         let ordered: Vec<&Record> = members.iter().map(|&at| &records[at]).collect();
         let text = emit_file(&ordered, &formatter);
         let relative = relative_path(&node.path);
@@ -77,13 +76,13 @@ fn relative_path(path: &[String]) -> PathBuf {
 
 fn emit_file(records: &[&Record], formatter: &Formatter) -> String {
     let mut out = String::from("questions:\n");
-    for (index, record) in records.iter().enumerate() {
-        emit_question(&mut out, record, index + 1, formatter);
+    for record in records {
+        emit_question(&mut out, record, formatter);
     }
     out
 }
 
-fn emit_question(out: &mut String, record: &Record, num: usize, formatter: &Formatter) {
+fn emit_question(out: &mut String, record: &Record, formatter: &Formatter) {
     const INDENT: &str = "  ";
     let mut first = true;
     let mut kv = |out: &mut String, key: &str, value: &str| {
@@ -100,7 +99,6 @@ fn emit_question(out: &mut String, record: &Record, num: usize, formatter: &Form
     };
 
     kv(out, "fb", &scalar_i64(record.fb));
-    kv(out, "num", &num.to_string());
     kv(out, "type", &scalar_str(record.kind));
     kv(out, "difficulty", &num_text(record.difficulty));
     kv(out, "answer", &scalar_opt_str(record.answer.as_deref()));
@@ -181,16 +179,15 @@ mod tests {
     use crate::model::{Num, Record, build_nodes};
     use serde_json::json;
 
-    fn record(fb: i64, paper_num: Option<i64>) -> Record {
+    fn record(fb: i64) -> Record {
         Record {
             fb,
-            paper_num,
             kind: "单选",
             difficulty: Some(Num::Int(4)),
             answer: Some("C".into()),
             my_answer: Some("A".into()),
             correct_ratio: Some(Num::Float(90.58)),
-            source: Some(format!("某考试第{}题", paper_num.unwrap_or(fb))),
+            source: Some("某考试第13题".into()),
             keypoints: vec!["重要会议讲话".into()],
             material: None,
             stem: "<p>题干</p>".into(),
@@ -206,7 +203,7 @@ mod tests {
 
     #[test]
     fn question_block_has_fixed_field_order() {
-        let text = emit(&[record(10, Some(13))]);
+        let text = emit(&[record(10)]);
         let keys: Vec<&str> = text
             .lines()
             .skip(1)
@@ -217,7 +214,6 @@ mod tests {
             keys,
             vec![
                 "fb",
-                "num",
                 "type",
                 "difficulty",
                 "answer",
@@ -232,7 +228,6 @@ mod tests {
             ]
         );
         assert!(text.starts_with("questions:\n- fb: 10\n"));
-        assert!(text.contains("  num: 1\n"));
         assert!(text.contains("  difficulty: 4\n"));
         assert!(text.contains("  correct_ratio: 90.58\n"));
         assert!(text.contains("  keypoints: [重要会议讲话]\n"));
@@ -243,14 +238,14 @@ mod tests {
     }
 
     #[test]
-    fn within_file_order_follows_paper_number() {
-        // 排序发生在 write_tree（文件内顺序），不在 emit_file。
+    fn within_file_order_follows_capture_order() {
+        // 文件内不重排：落盘顺序与抓取顺序一致。
         let nodes = build_nodes(&json!([
             {"name": "分类", "questionIds": [30, 20, 10], "children": []}
         ]))
         .expect("分类树应可解析");
         let dir = tempdir("order");
-        let records = vec![record(30, Some(7)), record(20, Some(2)), record(10, None)];
+        let records = vec![record(30), record(20), record(10)];
         let files = write_tree(&dir, &nodes, &records).expect("写盘应成功");
         let text = std::fs::read_to_string(dir.join(&files[0].path)).expect("读回失败");
         let order: Vec<i64> = text
@@ -258,7 +253,7 @@ mod tests {
             .filter_map(|line| line.strip_prefix("- fb: "))
             .map(|value| value.parse().expect("fb 应是整数"))
             .collect();
-        assert_eq!(order, vec![20, 30, 10]);
+        assert_eq!(order, vec![30, 20, 10]);
         std::fs::remove_dir_all(&dir).ok();
     }
 
@@ -275,7 +270,7 @@ mod tests {
         ]))
         .expect("分类树应可解析");
         let dir = tempdir("place");
-        let records = vec![record(10, Some(1)), record(20, Some(2))];
+        let records = vec![record(10), record(20)];
         let files = write_tree(&dir, &nodes, &records).expect("写盘应成功");
         assert_eq!(files.len(), 1);
         assert_eq!(files[0].category, "资料分析/比重问题/两期");
@@ -301,7 +296,7 @@ mod tests {
         ]))
         .expect("分类树应可解析");
         let dir = tempdir("verbatim");
-        let records = vec![record(10, Some(1)), record(20, Some(2))];
+        let records = vec![record(10), record(20)];
         let files = write_tree(&dir, &nodes, &records).expect("写盘应成功");
         let paths: Vec<&str> = files.iter().map(|file| file.path.as_str()).collect();
         assert_eq!(

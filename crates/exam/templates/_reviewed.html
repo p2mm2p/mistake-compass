@@ -8,7 +8,7 @@
     <tr><th>题号</th><th>来源</th><th>状态</th><th></th></tr>
     {% for row in rows %}
     <tr>
-      <td class="muted">#{{ row.num }}</td>
+      <td class="muted">#{{ row.position }}</td>
       <td>{{ row.source }}</td>
       <td>{{ m::badge(row.state) }}</td>
       <td>

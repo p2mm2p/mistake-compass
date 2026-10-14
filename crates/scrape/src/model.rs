@@ -3,9 +3,7 @@
 //! 这里不碰网络与文件系统，输入输出都是内存值，便于对着真实响应做单测。
 
 use std::collections::HashMap;
-use std::sync::LazyLock;
 
-use regex::Regex;
 use serde_json::Value;
 
 use crate::scalar::py_round2;
@@ -35,8 +33,6 @@ pub enum Num {
 #[derive(Debug, Clone)]
 pub struct Record {
     pub fb: i64,
-    /// 卷内题号，仅用于同一分类内排序。
-    pub paper_num: Option<i64>,
     pub kind: &'static str,
     pub difficulty: Option<Num>,
     pub answer: Option<String>,
@@ -307,7 +303,6 @@ impl Located<'_> {
 
         Ok(Record {
             fb,
-            paper_num: source.as_deref().and_then(paper_num),
             kind,
             difficulty: raw.get("difficulty").and_then(as_num),
             answer,
@@ -407,20 +402,6 @@ fn as_num(value: &Value) -> Option<Num> {
     value.as_f64().map(Num::Float)
 }
 
-static PAPER_NUM: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"第(\d+)题\s*$").unwrap());
-
-/// 从来源串里取卷内题号，仅用于文件内排序。
-fn paper_num(source: &str) -> Option<i64> {
-    let trimmed = source.trim();
-    if trimmed.is_empty() {
-        return None;
-    }
-    PAPER_NUM
-        .captures(trimmed)
-        .and_then(|c| c.get(1))
-        .and_then(|g| g.as_str().parse().ok())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -511,7 +492,6 @@ mod tests {
         let records = build_records(&[10, 20], &[batch()]).expect("装配应成功");
         assert_eq!(records[0].answer.as_deref(), Some("B"));
         assert_eq!(records[0].my_answer.as_deref(), Some("C"));
-        assert_eq!(records[0].paper_num, Some(13));
         assert_eq!(records[0].material.as_deref(), Some("<p>材料</p>"));
         assert_eq!(records[0].difficulty, Some(Num::Int(4)));
         assert_eq!(records[1].answer.as_deref(), Some("错"));

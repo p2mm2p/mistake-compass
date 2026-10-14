@@ -20,10 +20,12 @@ use crate::view::{
     self, DrawerFragment, Feedback, IndexPage, QuestionFragment, ReviewedFragment, TopFragment,
 };
 
-/// 服务共享状态：整库与复盘状态都是启动时载入、作答时写回。
+/// 服务共享状态：整库、复盘状态与当前分类的做题数组。
 pub struct App {
     pub corpus: Corpus,
     pub review: Mutex<Review>,
+    /// 打开分类时排好的数组；作答期间不重排（见 `view::build_order`）。
+    order: Mutex<Option<view::Order>>,
 }
 
 impl App {
@@ -34,7 +36,57 @@ impl App {
         Ok(App {
             corpus,
             review: Mutex::new(review),
+            order: Mutex::new(None),
         })
+    }
+
+    /// 重排该分类的做题数组；打开分类时调用。
+    fn refresh_order(&self, cat: &str) -> Option<view::Order> {
+        let order = {
+            let review = self.review.lock().expect("复盘状态锁未被污染");
+            view::build_order(&self.corpus, &review, cat)?
+        };
+        let mut slot = self.order.lock().expect("做题数组锁未被污染");
+        *slot = Some(order.clone());
+        Some(order)
+    }
+
+    /// 取该分类的做题数组：分类相同直接复用，否则重排。
+    fn order_for(&self, cat: &str) -> Option<view::Order> {
+        let current = self.order.lock().expect("做题数组锁未被污染").clone();
+        if let Some(order) = current {
+            if order.cat == cat {
+                return Some(order);
+            }
+        }
+        self.refresh_order(cat)
+    }
+
+    /// 做题面板的题；分类不存在或没有可做题时返回 `None`。
+    fn question_view(
+        &self,
+        cat: &str,
+        anchor: Option<i64>,
+        feedback: Option<Feedback>,
+    ) -> Option<view::QuestionView> {
+        let order = self.order_for(cat)?;
+        let review = self.review.lock().expect("复盘状态锁未被污染");
+        view::question_view(&self.corpus, &review, &order, anchor, feedback)
+    }
+
+    /// 已复盘列表的行；分类不存在时为空列表。
+    fn reviewed_rows(&self, cat: &str) -> Vec<view::ReviewedRow> {
+        let Some(order) = self.order_for(cat) else {
+            return Vec::new();
+        };
+        let review = self.review.lock().expect("复盘状态锁未被污染");
+        view::reviewed_rows(&self.corpus, &review, &order)
+    }
+
+    /// 完成态；本分类还有可做题时返回 `None`。
+    fn done_view(&self, cat: &str, expanded: &str) -> Option<view::DoneView> {
+        let review = self.review.lock().expect("复盘状态锁未被污染");
+        view::done_view(&self.corpus, &review, cat, expanded)
     }
 }
 
@@ -106,6 +158,8 @@ async fn open(AxumState(app): AxumState<Shared>, Query(query): Query<OpenQuery>)
     if app.corpus.category(&cat).is_none() {
         return (StatusCode::NOT_FOUND, "分类不存在").into_response();
     }
+    // 打开分类：重排数组，本次作答期间不再变动。
+    app.refresh_order(&cat);
     let expanded = view::parse_expanded(&query.expanded);
     let fragment = DrawerFragment {
         rows: drawer_rows(&app, &expanded, &cat),
@@ -135,14 +189,10 @@ struct SelectQuery {
 /// 选中分类（或恢复某个分类的做题面板）：换 `#top` 与 `#panel`。
 async fn select(AxumState(app): AxumState<Shared>, Query(query): Query<SelectQuery>) -> Response {
     let expanded = view::parse_expanded(&query.expanded);
-    Html(panel_with_top(
-        &app,
-        query.cat.trim(),
-        &expanded,
-        query.fb,
-        None,
-    ))
-    .into_response()
+    let cat = query.cat.trim();
+    // 选中分类 = 打开分类：重排数组。
+    app.refresh_order(cat);
+    Html(panel_with_top(&app, cat, &expanded, query.fb, None)).into_response()
 }
 
 #[derive(serde::Deserialize)]
@@ -158,15 +208,14 @@ async fn question(
     Query(query): Query<QuestionQuery>,
 ) -> Response {
     let cat = query.cat.trim();
-    let review = app.review.lock().expect("复盘状态锁未被污染");
-    match view::question_view(&app.corpus, &review, cat, query.fb, None) {
+    match app.question_view(cat, query.fb, None) {
         Some(view) => Html(render_string(&QuestionFragment {
             view: Some(view),
             done: None,
         }))
         .into_response(),
         None => {
-            let done = view::done_view(&app.corpus, &review, cat, "");
+            let done = app.done_view(cat, "");
             if done.is_none() && app.corpus.category(cat).is_none() {
                 return (StatusCode::NOT_FOUND, "分类不存在").into_response();
             }
@@ -254,10 +303,8 @@ async fn mark(AxumState(app): AxumState<Shared>, Query(query): Query<MarkQuery>)
 
     // 从已复盘列表里改回未复盘：停留在列表并少一行。
     if query.from == "reviewed" && query.to == State::New.label() {
-        let review = app.review.lock().expect("复盘状态锁未被污染");
-        let rows = view::reviewed_rows(&app.corpus, &review, &owner);
+        let rows = app.reviewed_rows(&owner);
         let name = owner.rsplit('/').next().unwrap_or(&owner).to_string();
-        drop(review);
         let mut body = top_oob(&app, &owner, &expanded);
         body.push_str(&render_string(&ReviewedFragment {
             cat: owner.clone(),
@@ -296,9 +343,7 @@ async fn reviewed(
         return (StatusCode::NOT_FOUND, "分类不存在").into_response();
     }
     let expanded = view::parse_expanded(&query.expanded);
-    let review = app.review.lock().expect("复盘状态锁未被污染");
-    let rows = view::reviewed_rows(&app.corpus, &review, &cat);
-    drop(review);
+    let rows = app.reviewed_rows(&cat);
     let name = cat.rsplit('/').next().unwrap_or(&cat).to_string();
     Html(render_string(&ReviewedFragment {
         cat,
@@ -319,13 +364,11 @@ fn panel_inner(
     anchor: Option<i64>,
     feedback: Option<Feedback>,
 ) -> String {
-    let review = app.review.lock().expect("复盘状态锁未被污染");
-    let view = view::question_view(&app.corpus, &review, cat, anchor, feedback);
+    let view = app.question_view(cat, anchor, feedback);
     let done = match view {
         Some(_) => None,
-        None => view::done_view(&app.corpus, &review, cat, &view::join_expanded(expanded)),
+        None => app.done_view(cat, &view::join_expanded(expanded)),
     };
-    drop(review);
     render_string(&QuestionFragment { view, done })
 }
 

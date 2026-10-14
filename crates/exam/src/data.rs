@@ -62,10 +62,9 @@ impl Number {
     }
 }
 
-/// 13 个字段的落盘顺序。
-pub const FIELDS: [&str; 13] = [
+/// 12 个字段的落盘顺序。
+pub const FIELDS: [&str; 12] = [
     "fb",
-    "num",
     "type",
     "difficulty",
     "answer",
@@ -83,7 +82,6 @@ pub const FIELDS: [&str; 13] = [
 #[derive(Debug, Clone, Deserialize)]
 pub struct Question {
     pub fb: i64,
-    pub num: u32,
     #[serde(rename = "type")]
     pub kind: QuestionType,
     pub difficulty: Option<Number>,
@@ -273,9 +271,6 @@ fn read_category(dir: &Path, path: &Path) -> Result<Category, String> {
         check_field_types(path, no, question)?;
         let typed: Question = serde_norway::from_value(item.clone())
             .map_err(|e| bad(path, &format!("第 {no} 题读不回结构：{e}")))?;
-        if typed.num != no as u32 {
-            return Err(bad(path, &format!("第 {no} 题的 num 是 {}", typed.num)));
-        }
         questions.push(typed);
     }
 
@@ -380,7 +375,7 @@ fn check_field_types(
             }
         }
     }
-    for field in ["num", "fb"] {
+    for field in ["fb"] {
         match get(field) {
             Some(serde_norway::Value::Number(number)) if number.as_i64().is_some() => {}
             other => {
@@ -527,10 +522,10 @@ mod tests {
         std::fs::write(path, text).expect("写测试文件失败");
     }
 
-    fn sample(fb: i64, num: usize) -> String {
+    fn sample(fb: i64, paper: usize) -> String {
         format!(
-            "questions:\n- fb: {fb}\n  num: {num}\n  type: 单选\n  difficulty: 4\n  \
-             answer: C\n  my_answer: A\n  correct_ratio: 90.58\n  source: 某考试第{num}题\n  \
+            "questions:\n- fb: {fb}\n  type: 单选\n  difficulty: 4\n  \
+             answer: C\n  my_answer: A\n  correct_ratio: 90.58\n  source: 某考试第{paper}题\n  \
              keypoints: null\n  material: null\n  stem: |-\n    <p>题干</p>\n  options:\n    - 甲\n    - 乙\n  \
              solution: |-\n    <p>解析</p>\n"
         )
@@ -588,11 +583,23 @@ mod tests {
     }
 
     #[test]
-    fn num_out_of_sequence_is_rejected() {
-        let dir = tempdir("num");
-        write(&dir, "甲.yaml", &sample(7, 3));
-        let error = load(&dir).expect_err("num 跳号应报错");
-        assert!(error.contains("num"), "{error}");
+    fn file_order_is_preserved() {
+        // “第 N 题”由文件里的物理顺序决定，这里守住这个前提。
+        let dir = tempdir("order");
+        write(
+            &dir,
+            "甲.yaml",
+            &sample_many(&[sample(30, 1), sample(10, 2), sample(20, 3)]),
+        );
+        let corpus = load(&dir).expect("载入应成功");
+        let fbs: Vec<i64> = corpus
+            .category("甲")
+            .expect("分类应存在")
+            .questions
+            .iter()
+            .map(|question| question.fb)
+            .collect();
+        assert_eq!(fbs, vec![30, 10, 20]);
         std::fs::remove_dir_all(&dir).ok();
     }
 
