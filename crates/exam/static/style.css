@@ -97,7 +97,8 @@ body {
 
 #top h1 { font-size: 20px; margin: 0; }
 
-#panel { padding: 22px; flex: 1; }
+/* min-height: 0 让面板随窗口压扁，材料内部滚动才有确定的可用高度。 */
+#panel { padding: 22px; flex: 1; min-height: 0; }
 
 .muted { color: var(--muted); font-size: 13px; font-weight: 400; }
 .hint { color: var(--muted); }
@@ -153,6 +154,21 @@ button:disabled { opacity: .4; cursor: default; }
   border-radius: 8px;
   background: #fafbfc;
   overflow-x: auto;
+}
+
+/* 窗口放不下时，材料改为内部滚动，让题干和选项留在同一屏。 */
+/* 解析出现时不做要求，约束撤销、整页照常滚。 */
+.qcard:not(:has(.feedback)) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.qcard:not(:has(.feedback)) > * { flex: none; }
+.qcard:not(:has(.feedback)) > .material {
+  flex: 0 1 auto;
+  min-height: 100px;
+  overflow-y: auto;
 }
 
 .stem { overflow-x: auto; }
