@@ -147,9 +147,13 @@ body {
 }
 
 .board-enter { display: inline-flex; align-items: center; }
-.board-clear, .board-exit { display: none; }
+.board-clear, .board-exit { display: none; align-items: center; }
 .qcard.board-on .board-enter { display: none; }
-.qcard.board-on .board-clear, .qcard.board-on .board-exit { display: inline-block; }
+.qcard.board-on .board-clear, .qcard.board-on .board-exit { display: inline-flex; }
+
+/* 图标按钮靠颜色区分：清空蓝、退出红。 */
+.board-clear { color: var(--link); }
+.board-exit { color: var(--weak); }
 
 button {
   padding: 4px 10px;
