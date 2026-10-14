@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- v0.2.0 提供画板功能。
 - 当界面无法容纳材料和题目时，材料变为可滚动。
 
 ## [0.1.0] - 2026-10-13

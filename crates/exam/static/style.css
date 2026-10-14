@@ -127,7 +127,29 @@ body {
   gap: 4px;
   margin-bottom: 12px;
 }
-.qbar { margin-left: auto; display: flex; gap: 8px; }
+/* z-index 让画板模式下，右上角按钮浮在画布之上。 */
+.qbar { margin-left: auto; display: flex; gap: 8px; position: relative; z-index: 3; }
+
+/* 画板：canvas 盖住整张题目卡片，笔迹不持久化，退出即销毁。 */
+.qcard { position: relative; }
+
+.board {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  cursor: crosshair;
+  touch-action: none;
+  border: 2px dashed var(--link);
+  border-radius: 8px;
+  background: rgba(11, 98, 196, .06);
+}
+
+.board-enter { display: inline-flex; align-items: center; }
+.board-clear, .board-exit { display: none; }
+.qcard.board-on .board-enter { display: none; }
+.qcard.board-on .board-clear, .qcard.board-on .board-exit { display: inline-block; }
 
 button {
   padding: 4px 10px;
