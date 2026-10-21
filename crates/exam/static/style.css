@@ -15,7 +15,7 @@
   --link: #0b62c4;
 }
 
-* { box-sizing: border-box; }
+:where(*, *::before, *::after) { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -26,11 +26,7 @@ body {
   background: var(--bg);
 }
 
-.shell {
-  display: flex;
-  height: 100vh;
-  overflow: hidden;
-}
+.shell { display: flex; height: 100vh; overflow: hidden; }
 
 #drawer {
   width: 300px;
@@ -39,63 +35,36 @@ body {
   border-right: 1px solid var(--line);
   background: var(--card);
   overflow: auto;
+
+  & .node {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    cursor: pointer;
+    user-select: none;
+  }
+  & .node:hover { background: #f2f3f5; }
+  & .node.sel { background: var(--sel); font-weight: 600; }
+  & .arrow { display: inline-block; width: 12px; flex: none; color: #9ca3af; }
+  & .icon { flex: none; width: 14px; height: 14px; fill: #8a94a0; }
+  & .dir .icon { fill: #d9a441; }
+  & .file .icon { fill: #9aa4b0; }
+  & .file .icon .fold { fill: none; stroke: #ffffff; stroke-width: 1.1; }
+  & .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 
-#drawer .node {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  border-radius: 5px;
-  cursor: pointer;
-  user-select: none;
-}
-
-#drawer .node:hover { background: #f2f3f5; }
-#drawer .node.sel { background: var(--sel); font-weight: 600; }
-
-#drawer .arrow {
-  display: inline-block;
-  width: 12px;
-  flex: none;
-  color: #9ca3af;
-}
-
-#drawer .icon {
-  flex: none;
-  width: 14px;
-  height: 14px;
-  fill: #8a94a0;
-}
-#drawer .dir .icon { fill: #d9a441; }
-#drawer .file .icon { fill: #9aa4b0; }
-#drawer .file .icon .fold {
-  fill: none;
-  stroke: #ffffff;
-  stroke-width: 1.1;
-}
-#drawer .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-#main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: auto;
-}
+#main { flex: 1; display: flex; flex-direction: column; overflow: auto; }
 
 #top {
   padding: 14px 22px;
   border-bottom: 1px solid var(--line);
   background: var(--card);
-}
 
-#top .bar {
-  display: flex;
-  align-items: baseline;
-  gap: 18px;
+  & .bar { display: flex; align-items: baseline; gap: 18px; }
+  & h1 { font-size: 20px; margin: 0; }
 }
-
-#top h1 { font-size: 20px; margin: 0; }
 
 /* min-height: 0 让面板随窗口压扁，材料内部滚动才有确定的可用高度。 */
 #panel { padding: 22px; flex: 1; min-height: 0; }
@@ -103,36 +72,26 @@ body {
 .muted { color: var(--muted); font-size: 13px; font-weight: 400; }
 .hint { color: var(--muted); }
 
-.badge {
-  padding: 1px 8px;
-  border-radius: 9px;
-  font-size: 12px;
-  margin-left: 6px;
-}
+.badge { padding: 1px 8px; border-radius: 9px; font-size: 12px; margin-left: 6px; }
 .badge-new { background: var(--new-bg); }
 .badge-ok { background: var(--ok-bg); color: var(--ok); }
 .badge-weak { background: var(--weak-bg); color: var(--weak); }
+.pill { padding: 1px 6px; border-radius: 4px; font-size: 12px; background: #eef1f6; margin-left: 6px; }
 
-.pill {
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 12px;
-  background: #eef1f6;
-  margin-left: 6px;
-}
-
-.qhead {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 12px;
-}
+.qhead { display: flex; align-items: center; gap: 4px; margin-bottom: 12px; }
 /* z-index 让画板模式下，右上角按钮浮在画布之上。 */
 .qbar { margin-left: auto; display: flex; gap: 8px; position: relative; z-index: 3; }
 
-/* 画板：canvas 盖住整张题目卡片，笔迹不持久化，退出即销毁。 */
-.qcard { position: relative; }
+.qcard {
+  position: relative;
 
+  &.board-on {
+    & .board-enter { display: none; }
+    & :is(.board-clear, .board-exit) { display: inline-flex; }
+  }
+}
+
+/* 画板：canvas 盖住整张题目卡片，笔迹不持久化，退出即销毁。 */
 .board {
   position: absolute;
   inset: 0;
@@ -144,13 +103,11 @@ body {
   border: 2px dashed var(--link);
   border-radius: 8px;
   background: rgba(11, 98, 196, .06);
+  background: color-mix(in srgb, var(--link) 6%, transparent);
 }
 
 .board-enter { display: inline-flex; align-items: center; }
-.board-clear, .board-exit { display: none; align-items: center; }
-.qcard.board-on .board-enter { display: none; }
-.qcard.board-on .board-clear, .qcard.board-on .board-exit { display: inline-flex; }
-
+:is(.board-clear, .board-exit) { display: none; align-items: center; }
 /* 图标按钮靠颜色区分：清空蓝、退出红。 */
 .board-clear { color: var(--link); }
 .board-exit { color: var(--weak); }
@@ -162,16 +119,12 @@ button {
   background: var(--card);
   font: inherit;
   cursor: pointer;
-}
-button:hover { background: #f4f5f7; }
-button:disabled { opacity: .4; cursor: default; }
 
-.linklike {
-  border: 0;
-  padding: 0;
-  background: none;
-  color: var(--link);
+  &:hover { background: #f4f5f7; }
+  &:disabled { opacity: .4; cursor: default; }
 }
+
+.linklike { border: 0; padding: 0; background: none; color: var(--link); }
 
 .material {
   padding: 10px 14px;
@@ -189,24 +142,20 @@ button:disabled { opacity: .4; cursor: default; }
   flex-direction: column;
   height: 100%;
   min-height: 0;
-}
-.qcard:not(:has(.feedback)) > * { flex: none; }
-.qcard:not(:has(.feedback)) > .material {
-  flex: 0 1 auto;
-  min-height: 100px;
-  overflow-y: auto;
+
+  & > * { flex: none; }
+  & > .material { flex: 0 1 auto; min-height: 100px; overflow-y: auto; }
 }
 
 .stem { overflow-x: auto; }
-.stem img, .material img, .opt-text img, .solution img { max-width: 100%; }
-.stem table, .material table, .solution table { border-collapse: collapse; }
-.stem td, .stem th, .material td, .material th, .solution td, .solution th {
-  border: 1px solid var(--line);
-  padding: 4px 8px;
-}
+:is(.stem, .material, .opt-text, .solution) img { max-width: 100%; }
+:is(.stem, .material, .solution) table { border-collapse: collapse; }
+:is(.stem, .material, .solution) :is(td, th) { border: 1px solid var(--line); padding: 4px 8px; }
 
 .answers { margin-top: 12px; }
 
+/* 选项有“指针在哪”和“选没选中”两件事，必须各走一条通道，否则多选时混作一谈：
+   指针 → 整行底色与左条；选中 → 字母徽章反白 + 整行加深 + 字体加粗。 */
 .opt {
   display: block;
   width: 100%;
@@ -219,67 +168,59 @@ button:disabled { opacity: .4; cursor: default; }
   background: none;
   cursor: pointer;
   transition: background-color .12s, border-color .12s;
-}
 
-/* 选项有“指针在哪”和“选没选中”两件事，必须各走一条通道，否则多选时混作一谈：
-   指针 → 整行底色与左条；选中 → 字母徽章反白 + 整行加深 + 字体加粗。 */
-.opt:hover {
-  background: var(--sel);
-  border-color: #c3d5f1;
-  border-left-color: var(--link);
-}
+  /* 悬停：徽章转成描边，与“选中”的实心区分开。 */
+  &:hover {
+    background: var(--sel);
+    border-color: #c3d5f1;
+    border-left-color: var(--link);
 
-.opt .key {
+    & .key { background: #fff; color: var(--link); box-shadow: 0 0 0 1.5px var(--link) inset; }
+  }
   /* 用 flex 居中，而不是 line-height 居中。
      行高 1.7em = 23.8px 是非整数，靠 line-height 居中时基线会被吸附到整像素，
      字母整体上移约 1px；flex 居中实测偏差 0.00px。 */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.7em;
-  height: 1.7em;
-  line-height: 1;
-  border-radius: 999px;
-  background: #eef1f6;
-  color: #4b5563;
-  font-weight: 700;
-  transition: background-color .12s, color .12s, box-shadow .12s;
-}
-/* 悬停：徽章转成描边，与“选中”的实心区分开。 */
-.opt:hover .key {
-  background: #fff;
-  color: var(--link);
-  box-shadow: 0 0 0 1.5px var(--link) inset;
+  & .key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.7em;
+    height: 1.7em;
+    line-height: 1;
+    border-radius: 999px;
+    background: #eef1f6;
+    color: #4b5563;
+    font-weight: 700;
+    transition: background-color .12s, color .12s, box-shadow .12s;
+  }
 }
 
 .opt-multi {
   display: flex;
   align-items: flex-start;
   gap: 6px;
+
+  & input {
+    /* 表单控件默认 13.33px，会让下面的 em 与徽章对不上；显式继承后两边同一把尺子。 */
+    font: inherit;
+    accent-color: var(--link);
+    width: 15px;
+    height: 15px;
+    /* 复选框与字母徽章同高居中：徽章高 1.7em，把 15px 的框放进徽章中线。 */
+    margin-top: calc((1.7em - 15px) / 2);
+
+    /* 选中：徽章实心反白。这条不依赖 `:has()`，浏览器不支持时主信号仍在。 */
+    &:checked ~ .key { background: var(--link); color: #fff; box-shadow: none; }
+  }
+  &:has(input:checked) {
+    background: #cddffa;
+    border-color: #7ea9ee;
+    border-left-color: var(--link);
+    font-weight: 600;
+  }
+  /* 已选又悬停：再深一档，四个状态两两可辨。 */
+  &:has(input:checked):hover { background: #bed5f7; }
 }
-.opt-multi input {
-  /* 表单控件默认 13.33px，会让下面的 em 与徽章对不上；显式继承后两边同一把尺子。 */
-  font: inherit;
-  accent-color: var(--link);
-  width: 15px;
-  height: 15px;
-  /* 复选框与字母徽章同高居中：徽章高 1.7em，把 15px 的框放进徽章中线。 */
-  margin-top: calc((1.7em - 15px) / 2);
-}
-/* 选中：徽章实心反白。这条不依赖 `:has()`，浏览器不支持时主信号仍在。 */
-.opt-multi input:checked ~ .key {
-  background: var(--link);
-  color: #fff;
-  box-shadow: none;
-}
-.opt-multi:has(input:checked) {
-  background: #cddffa;
-  border-color: #7ea9ee;
-  border-left-color: var(--link);
-  font-weight: 600;
-}
-/* 已选又悬停：再深一档，四个状态两两可辨。 */
-.opt-multi:has(input:checked):hover { background: #bed5f7; }
 
 .submit { margin-top: 10px; }
 
@@ -289,10 +230,11 @@ button:disabled { opacity: .4; cursor: default; }
   border: 1px solid var(--ok-bg);
   border-radius: 8px;
   background: #f4f9f5;
+
+  &.bad { border-color: var(--weak-bg); background: #fdf5f5; }
+  & .verdict { font-weight: 700; margin: 0 0 6px; }
+  & .solution { margin-top: 8px; }
 }
-.feedback.bad { border-color: var(--weak-bg); background: #fdf5f5; }
-.feedback .verdict { font-weight: 700; margin: 0 0 6px; }
-.feedback .solution { margin-top: 8px; }
 
 .qfoot {
   display: flex;
@@ -303,20 +245,10 @@ button:disabled { opacity: .4; cursor: default; }
   border-top: 1px solid var(--line);
 }
 
-.done {
-  padding: 30px;
-  border: 1px dashed #cbd0d6;
-  border-radius: 10px;
-  text-align: center;
-}
+.done { padding: 30px; border: 1px dashed #cbd0d6; border-radius: 10px; text-align: center; }
 
-.reviewed h2 { font-size: 18px; }
-.reviewed table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.reviewed td, .reviewed th {
-  padding: 7px 8px;
-  border-bottom: 1px solid var(--line);
-  text-align: left;
+.reviewed {
+  & h2 { font-size: 18px; }
+  & table { width: 100%; border-collapse: collapse; }
+  & :is(td, th) { padding: 7px 8px; border-bottom: 1px solid var(--line); text-align: left; }
 }

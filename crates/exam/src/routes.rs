@@ -105,6 +105,7 @@ pub fn router(app: Shared) -> Router {
         .route("/reviewed", get(reviewed))
         .route("/static/htmx.min.js", get(htmx))
         .route("/static/board.js", get(board))
+        .route("/static/atrament.esm.min.js", get(atrament))
         .route("/static/style.css", get(css))
         .with_state(app)
 }
@@ -456,6 +457,18 @@ async fn htmx() -> Response {
 
 async fn board() -> Response {
     static JS: &str = include_str!("../static/board.js");
+    (
+        [(
+            axum::http::header::CONTENT_TYPE,
+            "application/javascript; charset=utf-8",
+        )],
+        JS,
+    )
+        .into_response()
+}
+
+async fn atrament() -> Response {
+    static JS: &str = include_str!("../static/atrament.esm.min.js");
     (
         [(
             axum::http::header::CONTENT_TYPE,
