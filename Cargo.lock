@@ -597,7 +597,7 @@ dependencies = [
 
 [[package]]
 name = "exam"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "askama",
  "axum",
@@ -1178,7 +1178,7 @@ checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
 name = "login"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chromiumoxide",
  "futures",
@@ -1239,7 +1239,7 @@ dependencies = [
 
 [[package]]
 name = "mistake-compass"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "clap",
  "exam",
@@ -1667,7 +1667,7 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "scrape"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "markup_fmt",
  "regex",
