@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 题序保持抓取顺序，即官方默认的“新添加在前”。
 - 做题面板的“第 N / M 题”在作答过程中不再变化；上一题 / 下一题跳过已复盘的题。
+- 画板支持鼠标、触控笔和触摸，并按设备像素比绘制。
 
 ### Removed
 
@@ -27,4 +28,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - v0.1.0 登陆：拉起浏览器，等待用户登陆后，落盘 `cookie`。
 - v0.1.0 抓取：拉取错题，格式化其中的 `html` 片段（`stem` `solution` 块），落盘 `yaml` 文件。
-- v0.1.0 测验：启动本地 web 服务，提供本地访问地址（若离线使用，题目中的 `html` 片段包含的图片链接将加载失败，预期行为）。
+- v0.1.0 测验：启动本地 web 服务，并提供本地访问地址。离线使用时，题目中的图片链接会加载失败，属预期行为。
