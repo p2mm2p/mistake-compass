@@ -35,17 +35,18 @@
     {% if q.multi %}
     <div class="opts">
       {% for o in q.options %}
-      <label class="opt opt-multi">
-        <input type="checkbox" name="answers" value="{{ o.key }}">
+      <label class="opt opt-multi{% if let Some(feedback) = q.feedback.as_ref() %}{% if feedback.picked.contains(o.key.as_str()) %} picked{% endif %}{% if feedback.expected.contains(o.key.as_str()) %} correct{% endif %}{% endif %}{% if q.feedback.is_some() %} locked{% endif %}">
+        <input type="checkbox" name="answers" value="{{ o.key }}"{% if let Some(feedback) = q.feedback.as_ref() %}{% if feedback.picked.contains(o.key.as_str()) %} checked{% endif %}{% endif %}{% if q.feedback.is_some() %} disabled{% endif %}>
         <span class="key">{{ o.key }}</span><span class="opt-text">{{ o.text|safe }}</span>
       </label>
       {% endfor %}
     </div>
-    <button class="submit" type="submit">提交答案</button>
+    <button class="submit" type="submit"{% if q.feedback.is_some() %} disabled{% endif %}>提交答案</button>
     {% else %}
     <div class="opts">
       {% for o in q.options %}
-      <button class="opt opt-single" type="submit" name="answers" value="{{ o.key }}">
+      <button class="opt opt-single{% if let Some(feedback) = q.feedback.as_ref() %}{% if feedback.picked.contains(o.key.as_str()) %} picked{% endif %}{% if feedback.expected.contains(o.key.as_str()) %} correct{% endif %}{% endif %}{% if q.feedback.is_some() %} locked{% endif %}"
+              type="submit" name="answers" value="{{ o.key }}"{% if q.feedback.is_some() %} disabled aria-disabled="true"{% endif %}>
         <span class="key">{{ o.key }}</span><span class="opt-text">{{ o.text|safe }}</span>
       </button>
       {% endfor %}
