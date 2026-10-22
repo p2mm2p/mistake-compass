@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- 修复用户在点击选项并弹出答案后，仍然可以再次点击其它答案的问题。
+
 ## [0.2.0] - 2026-10-21
 
 ### Added

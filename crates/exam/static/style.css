@@ -170,13 +170,14 @@ button {
   transition: background-color .12s, border-color .12s;
 
   /* 悬停：徽章转成描边，与“选中”的实心区分开。 */
-  &:hover {
+  &:not(.locked):hover {
     background: var(--sel);
     border-color: #c3d5f1;
     border-left-color: var(--link);
 
     & .key { background: #fff; color: var(--link); box-shadow: 0 0 0 1.5px var(--link) inset; }
   }
+  &:disabled { opacity: 1; cursor: default; }
   /* 用 flex 居中，而不是 line-height 居中。
      行高 1.7em = 23.8px 是非整数，靠 line-height 居中时基线会被吸附到整像素，
      字母整体上移约 1px；flex 居中实测偏差 0.00px。 */
@@ -219,8 +220,30 @@ button {
     font-weight: 600;
   }
   /* 已选又悬停：再深一档，四个状态两两可辨。 */
-  &:has(input:checked):hover { background: #bed5f7; }
+  &:not(.locked):has(input:checked):hover { background: #bed5f7; }
 }
+
+.opt.correct {
+  background: var(--ok-bg);
+  border-color: #8ac49b;
+  border-left-color: var(--ok);
+  font-weight: 600;
+
+  & .key { background: var(--ok); color: #fff; box-shadow: none; }
+}
+
+.opt.picked:not(.correct) {
+  background: var(--weak-bg);
+  border-color: #e2a5a0;
+  border-left-color: var(--weak);
+  font-weight: 600;
+
+  & .key { background: var(--weak); color: #fff; box-shadow: none; }
+}
+
+.opt-multi.correct input { accent-color: var(--ok); }
+.opt-multi.picked:not(.correct) input { accent-color: var(--weak); }
+.opt.locked { cursor: default; }
 
 .submit { margin-top: 10px; }
 
