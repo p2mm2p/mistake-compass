@@ -1,5 +1,5 @@
 {% import "_macros.html" as m %}
-<article class="qcard" id="qcard">
+<article class="qcard{% if let Some(q) = view.as_ref() %}{% if q.material.is_some() %}{% if q.cat == "资料分析" || q.cat.starts_with("资料分析/") %} analysis{% endif %}{% endif %}{% endif %}" id="qcard">
   {% if let Some(q) = view %}
   <header class="qhead">
     <span class="muted">第 {{ q.position }} / {{ q.total }} 题</span>
@@ -25,35 +25,41 @@
   <section class="material">{{ material|safe }}</section>
   {% endif %}
 
-  <section class="stem">{{ q.stem|safe }}</section>
+  <section class="answer-area">
+    <section class="stem">{{ q.stem|safe }}</section>
 
-  {% if q.options.is_empty() %}
-  <p class="muted">该题没有选项。</p>
-  {% else %}
-  <form class="answers" hx-post="/answer?cat={{ q.cat|urlencode }}&amp;fb={{ q.fb }}"
-        hx-target="#panel" hx-swap="innerHTML">
-    {% if q.multi %}
-    <div class="opts">
-      {% for o in q.options %}
-      <label class="opt opt-multi{% if let Some(feedback) = q.feedback.as_ref() %}{% if feedback.picked.contains(o.key.as_str()) %} picked{% endif %}{% if feedback.expected.contains(o.key.as_str()) %} correct{% endif %}{% endif %}{% if q.feedback.is_some() %} locked{% endif %}">
-        <input type="checkbox" name="answers" value="{{ o.key }}"{% if let Some(feedback) = q.feedback.as_ref() %}{% if feedback.picked.contains(o.key.as_str()) %} checked{% endif %}{% endif %}{% if q.feedback.is_some() %} disabled{% endif %}>
-        <span class="key">{{ o.key }}</span><span class="opt-text">{{ o.text|safe }}</span>
-      </label>
-      {% endfor %}
-    </div>
-    <button class="submit" type="submit"{% if q.feedback.is_some() %} disabled{% endif %}>提交答案</button>
+    {% if q.options.is_empty() %}
+    <p class="muted">该题没有选项。</p>
     {% else %}
-    <div class="opts">
-      {% for o in q.options %}
-      <button class="opt opt-single{% if let Some(feedback) = q.feedback.as_ref() %}{% if feedback.picked.contains(o.key.as_str()) %} picked{% endif %}{% if feedback.expected.contains(o.key.as_str()) %} correct{% endif %}{% endif %}{% if q.feedback.is_some() %} locked{% endif %}"
-              type="submit" name="answers" value="{{ o.key }}"{% if q.feedback.is_some() %} disabled aria-disabled="true"{% endif %}>
-        <span class="key">{{ o.key }}</span><span class="opt-text">{{ o.text|safe }}</span>
-      </button>
-      {% endfor %}
-    </div>
+    <form class="answers" hx-post="/answer?cat={{ q.cat|urlencode }}&amp;fb={{ q.fb }}"
+          hx-target="#panel" hx-swap="innerHTML">
+      {% if q.multi %}
+      <div class="opts">
+        {% for o in q.options %}
+        <label class="opt opt-multi{% if let Some(feedback) = q.feedback.as_ref() %}{% if feedback.picked.contains(o.key.as_str()) %} picked{% endif %}{% if feedback.expected.contains(o.key.as_str()) %} correct{% endif %}{% endif %}{% if q.feedback.is_some() %} locked{% endif %}">
+          <input type="checkbox" name="answers" value="{{ o.key }}"{% if let Some(feedback) = q.feedback.as_ref() %}{% if feedback.picked.contains(o.key.as_str()) %} checked{% endif %}{% endif %}{% if q.feedback.is_some() %} disabled{% endif %}>
+          <span class="key">{{ o.key }}</span><span class="opt-text">{{ o.text|safe }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <button class="submit" type="submit"{% if q.feedback.is_some() %} disabled{% endif %}>提交答案</button>
+      {% else %}
+      <div class="opts">
+        {% for o in q.options %}
+        <button class="opt opt-single{% if let Some(feedback) = q.feedback.as_ref() %}{% if feedback.picked.contains(o.key.as_str()) %} picked{% endif %}{% if feedback.expected.contains(o.key.as_str()) %} correct{% endif %}{% endif %}{% if q.feedback.is_some() %} locked{% endif %}"
+                type="submit" name="answers" value="{{ o.key }}"{% if q.feedback.is_some() %} disabled aria-disabled="true"{% endif %}>
+          <span class="key">{{ o.key }}</span><span class="opt-text">{{ o.text|safe }}</span>
+        </button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </form>
     {% endif %}
-  </form>
-  {% endif %}
+
+    {% if let Some(last) = q.last %}
+    <p class="muted">上次作答：{{ last.answer }}（{{ last.result }}）</p>
+    {% endif %}
+  </section>
 
   {% if let Some(feedback) = q.feedback %}
   <div class="feedback {% if feedback.correct %}ok{% else %}bad{% endif %}">
@@ -62,8 +68,6 @@
     <div class="solution">{{ q.solution|safe }}</div>
     <p class="muted">状态已更新为「{{ feedback.state.label() }}」</p>
   </div>
-  {% else if let Some(last) = q.last %}
-  <p class="muted">上次作答：{{ last.answer }}（{{ last.result }}）</p>
   {% endif %}
 
   <footer class="qfoot">

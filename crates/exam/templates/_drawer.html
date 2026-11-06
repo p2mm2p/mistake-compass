@@ -1,4 +1,9 @@
 <nav id="drawer">
+  <button type="button" class="drawer-toggle" data-drawer-toggle
+          aria-controls="drawer" aria-expanded="true"
+          aria-label="收起侧边栏" title="收起侧边栏">
+    {% include "_icon_sidebar.html" %}
+  </button>
   {% for row in rows %}
   {% if row.kind == RowKind::Dir %}
   <div class="node dir{% if row.open %} open{% endif %}"

@@ -104,6 +104,7 @@ pub fn router(app: Shared) -> Router {
         .route("/mark", get(mark))
         .route("/reviewed", get(reviewed))
         .route("/static/htmx.min.js", get(htmx))
+        .route("/static/sidebar.js", get(sidebar))
         .route("/static/board.js", get(board))
         .route("/static/atrament.esm.min.js", get(atrament))
         .route("/static/style.css", get(css))
@@ -445,6 +446,18 @@ fn render_string<T: Template>(template: &T) -> String {
 
 async fn htmx() -> Response {
     static JS: &str = include_str!("../static/htmx.min.js");
+    (
+        [(
+            axum::http::header::CONTENT_TYPE,
+            "application/javascript; charset=utf-8",
+        )],
+        JS,
+    )
+        .into_response()
+}
+
+async fn sidebar() -> Response {
+    static JS: &str = include_str!("../static/sidebar.js");
     (
         [(
             axum::http::header::CONTENT_TYPE,

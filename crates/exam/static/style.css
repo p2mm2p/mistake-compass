@@ -36,6 +36,25 @@ body {
   background: var(--card);
   overflow: auto;
 
+  /* 放在右上角，收起后作为唯一的展开入口。 */
+  & .drawer-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    margin: 0 0 8px auto;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: none;
+    color: var(--muted);
+  }
+  & .drawer-toggle:hover {
+    border-color: var(--line);
+    background: #f2f3f5;
+  }
+  & .drawer-toggle .drawer-icon { flex: none; transition: transform .15s ease; }
   & .node {
     display: flex;
     align-items: center;
@@ -54,6 +73,17 @@ body {
   & .file .icon .fold { fill: none; stroke: #ffffff; stroke-width: 1.1; }
   & .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
+
+.shell.drawer-collapsed #drawer {
+  width: 40px;
+  min-width: 40px;
+  padding-right: 0;
+  padding-left: 0;
+  overflow: hidden;
+}
+.shell.drawer-collapsed #drawer .node { display: none; }
+.shell.drawer-collapsed #drawer .drawer-toggle { margin-right: auto; margin-left: auto; }
+.shell.drawer-collapsed #drawer .drawer-icon { transform: rotate(180deg); }
 
 #main { flex: 1; display: flex; flex-direction: column; overflow: auto; }
 
@@ -138,13 +168,65 @@ button {
 /* 窗口放不下时，材料改为内部滚动，让题干和选项留在同一屏。 */
 /* 解析出现时不做要求，约束撤销、整页照常滚。 */
 .qcard:not(:has(.feedback)) {
-  display: flex;
-  flex-direction: column;
   height: 100%;
   min-height: 0;
+}
+
+.qcard:not(.analysis):not(:has(.feedback)) {
+  display: flex;
+  flex-direction: column;
 
   & > * { flex: none; }
   & > .material { flex: 0 1 auto; min-height: 100px; overflow-y: auto; }
+}
+
+/* 资料分析题：材料左、答题右；反馈在右栏下方，窄屏回退单列。 */
+.qcard.analysis {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr);
+  grid-template-areas:
+    "head head"
+    "material answer"
+    "material feedback"
+    "foot foot";
+  column-gap: 18px;
+}
+
+.qcard.analysis > .qhead { grid-area: head; }
+.qcard.analysis > .material {
+  grid-area: material;
+  min-width: 0;
+  margin-bottom: 0;
+}
+.qcard.analysis > .answer-area {
+  grid-area: answer;
+  min-width: 0;
+}
+.qcard.analysis > .feedback { grid-area: feedback; }
+.qcard.analysis > .qfoot { grid-area: foot; }
+
+.qcard.analysis:not(:has(.feedback)) {
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+}
+.qcard.analysis:not(:has(.feedback)) > .material,
+.qcard.analysis:not(:has(.feedback)) > .answer-area {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+@media (max-width: 1100px) {
+  .qcard.analysis {
+    display: flex;
+    flex-direction: column;
+  }
+  .qcard.analysis > .material { margin-bottom: 14px; }
+  .qcard.analysis:not(:has(.feedback)) > * { flex: none; }
+  .qcard.analysis:not(:has(.feedback)) > .material {
+    flex: 0 1 auto;
+    min-height: 100px;
+    overflow-y: auto;
+  }
+  .qcard.analysis:not(:has(.feedback)) > .answer-area { overflow: visible; }
 }
 
 .stem { overflow-x: auto; }

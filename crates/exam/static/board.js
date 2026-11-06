@@ -23,12 +23,23 @@ import Atrament from "./atrament.esm.min.js";
     });
   }
 
-  // 重设画布尺寸会清空笔迹；销毁旧实例再挂新实例，避免监听器重复。
+  function snapshot() {
+    if (!canvas) return null;
+    const copy = document.createElement("canvas");
+    copy.width = canvas.width;
+    copy.height = canvas.height;
+    copy.getContext("2d").drawImage(canvas, 0, 0);
+    return copy;
+  }
+
+  // 重设尺寸会清空位图：先复制笔迹，重挂实例后再画回。
   function resize() {
     if (!canvas) return;
+    const previous = snapshot();
     if (ink) ink.destroy();
     ink = null;
     mount();
+    if (previous) canvas.getContext("2d").drawImage(previous, 0, 0);
   }
 
   function enter() {
@@ -59,6 +70,7 @@ import Atrament from "./atrament.esm.min.js";
   });
 
   window.addEventListener("resize", resize);
+  document.addEventListener("drawer:toggled", resize);
 
   // 换题替换 #panel 后，画布已不在文档里，模块状态同步清空。
   document.addEventListener("htmx:afterSwap", function () {
