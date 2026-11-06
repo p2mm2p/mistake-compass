@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- 左侧分类侧边栏右上角的图标按钮可收起侧边栏。
+
+### Changed
+
+- 资料分析题改为双栏：材料在左，题干、选项、作答控件和反馈在右；宽度不足时恢复单列。
+
 ### Fixed
 
 - 修复用户在点击选项并弹出答案后，仍然可以再次点击其它答案的问题。
