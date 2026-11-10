@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: 安装 wasm-bindgen
+        run: cargo install wasm-bindgen-cli --version 0.2.130 --locked
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: 运行测试
+        run: cargo test --workspace
+
+      - name: 检查业务依赖边界
+        run: cargo xtask check-deps
+
+      - name: 构建固定宿主
+        run: cargo xtask build --browser all
+
+      - name: 检查固定宿主未被构建修改
+        run: git diff --exit-code -- extension

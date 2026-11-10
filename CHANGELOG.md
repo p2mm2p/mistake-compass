@@ -5,10 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.0] - 2026-11-09
+
+### Breaking
+
+- 项目改为以浏览器拓展的方式运行（**重大破坏性变更**）。
+- 原生版本的数据目录不再由扩展直接读取，升级前先导出 ZIP 备份，或在扩展中重新抓取（**注意备份**）。
+- 抓取改用浏览器当前登录态，扩展不保存 cookie。
+- 页面改为扩展页内的 WASM 路由和 htmx 局部替换。
+
+### Removed
+
+- 删除原生 CLI、本地 HTTP 服务、三个平台启动脚本和登陆功能。
 
 ### Added
 
+- Chrome、Edge 和 Firefox 扩展包。
+- ZIP 完整备份导入和导出。
 - 左侧分类侧边栏右上角的图标按钮可收起侧边栏。
 
 ### Changed

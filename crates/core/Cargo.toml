@@ -1,0 +1,10 @@
+[package]
+name = "mc_core"
+version.workspace = true
+edition.workspace = true
+description = "错题罗盘领域模型、纯逻辑与端口 trait"
+
+[dependencies]
+serde = { workspace = true }
+serde_norway = { workspace = true }
+async-trait = { workspace = true }

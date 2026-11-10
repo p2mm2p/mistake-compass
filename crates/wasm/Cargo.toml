@@ -1,0 +1,24 @@
+[package]
+name = "mc_wasm"
+version.workspace = true
+edition.workspace = true
+description = "错题罗盘 WASM 宿主适配层"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+mc_core = { workspace = true }
+sync = { workspace = true }
+ui = { workspace = true }
+
+async-trait = { workspace = true }
+flate2 = { workspace = true }
+gloo-timers = { workspace = true }
+indexed_db_futures = { workspace = true }
+js-sys = { workspace = true }
+serde_json = { workspace = true }
+wasm-bindgen = { workspace = true }
+wasm-bindgen-futures = { workspace = true }
+web-sys = { workspace = true }
+zip = { workspace = true }

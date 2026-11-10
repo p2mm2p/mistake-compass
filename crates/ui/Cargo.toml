@@ -1,0 +1,11 @@
+[package]
+name = "ui"
+version.workspace = true
+edition.workspace = true
+description = "本地复盘页面：左抽屉分类树 + 右面板做题，全程 htmx 局部替换"
+
+[dependencies]
+mc_core = { workspace = true }
+
+askama = { workspace = true }
+form_urlencoded = { workspace = true }

@@ -1,0 +1,16 @@
+[package]
+name = "sync"
+version.workspace = true
+edition.workspace = true
+description = "错题抓取状态机与上游响应装配"
+
+[dependencies]
+mc_core = { workspace = true }
+
+markup_fmt = { workspace = true }
+regex = { workspace = true }
+# float_roundtrip 才与 Python json 逐位一致，否则 17 位小数会差 1 ulp。
+serde_json = { workspace = true, features = ["float_roundtrip"] }
+
+[dev-dependencies]
+futures = { workspace = true }
