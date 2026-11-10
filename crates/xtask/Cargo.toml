@@ -1,0 +1,10 @@
+[package]
+name = "xtask"
+version.workspace = true
+edition.workspace = true
+publish = false
+
+[dependencies]
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+serde_json = { workspace = true }
+zip = { version = "9.5", default-features = false, features = ["deflate-flate2"] }

@@ -1,0 +1,50 @@
+:root {
+  color: #24292f;
+  background: #f5f6f8;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+#app .shell {
+  height: calc(100vh - 58px);
+}
+
+#data-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 57px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+#data-controls input {
+  max-width: 180px;
+}
+
+#data-warning {
+  color: var(--weak);
+}
+
+#sync-progress {
+  max-width: 360px;
+  max-height: 40px;
+  margin: 0;
+  overflow: auto;
+  font-size: 10px;
+}
+
+.empty-state {
+  max-width: 720px;
+  margin: 48px auto;
+  padding: 28px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
