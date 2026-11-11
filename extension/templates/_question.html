@@ -8,13 +8,13 @@
     <span class="muted">难度 {{ q.difficulty }} · 正确率 {{ q.ratio }}%</span>
     <span class="qbar">
       <button type="button" class="board-enter" data-board="enter" title="画板" aria-label="画板">
-        {% include "_icon_board.html" %}
+        {% include "icons/_icon_board.html" %}
       </button>
       <button type="button" class="board-clear" data-board="clear" title="清空画板" aria-label="清空画板">
-        {% include "_icon_clear.html" %}
+        {% include "icons/_icon_clear.html" %}
       </button>
       <button type="button" class="board-exit" data-board="exit" title="退出画板" aria-label="退出画板">
-        {% include "_icon_exit.html" %}
+        {% include "icons/_icon_exit.html" %}
       </button>
       <button hx-get="/mark?cat={{ q.cat|urlencode }}&amp;fb={{ q.fb }}&amp;to={{ "已复盘"|urlencode }}"
               hx-target="#panel" hx-swap="innerHTML">设为已复盘</button>
