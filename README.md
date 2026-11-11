@@ -105,26 +105,29 @@ cargo xtask check-deps # `mc_core`、`ui`、`sync` 不允许出现浏览器依�
 | --- | --- | --- |
 | `crates/core` | `mc_core` | 题目、分类树、判分、复盘状态、端口 trait |
 | `crates/sync` | `sync` | 抓取状态机与上游响应装配 |
+| `crates/storage` | `storage` | 浏览器存储层：IndexedDB 持久化与 ZIP 备份格式 |
 | `crates/ui` | `ui` | 纯路由、Askama 视图与 htmx 片段 |
-| `crates/wasm` | `mc_wasm` | 浏览器适配层：fetch 桥、IndexedDB、ZIP 备份、WASM 导出 |
+| `crates/wasm` | `wasm` | 浏览器适配层：fetch 桥、WASM 导出、UI 宿主与同步入口 |
 | `crates/xtask` | `xtask` | 构建、manifest、静态文件和 ZIP 打包 |
 
 ### 依赖方向：
 
 ```text
-sync   ui
-  \   /
- mc_core
-    ^
-    |
- mc_wasm
+wasm
+|-- storage
+|   |-- sync -> mc_core
+|   `-- mc_core
+|-- sync -> mc_core
+|-- ui -> mc_core
+`-- mc_core
 
 xtask：构建时调用 cargo、wasm-bindgen 和 ZIP，不进入运行时依赖。
 ```
 
 - `mc_core` 不依赖文件系统、网络或浏览器 API。
 - `sync` 和 `ui` 单向依赖 `mc_core`。
-- `mc_wasm` 是唯一允许调用浏览器 API 的 Rust crate。
+- `storage` 负责 IndexedDB 与 ZIP 备份。
+- `wasm` 负责 WASM 导出与宿主适配。
 - `extension/` 基本只放固定宿主文件（`static/` 和 `templates` 除外）。
 
 ### 端口：

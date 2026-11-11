@@ -1,6 +1,13 @@
 [workspace]
 resolver = "3"
-members = ["crates/core", "crates/sync", "crates/ui", "crates/wasm", "crates/xtask"]
+members = [
+    "crates/core",
+    "crates/storage",
+    "crates/sync",
+    "crates/ui",
+    "crates/wasm",
+    "crates/xtask",
+]
 default-members = ["crates/core", "crates/sync", "crates/ui"]
 
 [workspace.package]
@@ -9,6 +16,7 @@ edition = "2024"
 
 [workspace.dependencies]
 mc_core = { path = "crates/core" }
+storage = { path = "crates/storage" }
 sync = { path = "crates/sync" }
 ui = { path = "crates/ui" }
 

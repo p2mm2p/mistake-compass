@@ -2,8 +2,8 @@ use std::cell::RefCell;
 
 use wasm_bindgen::prelude::*;
 
-use crate::idb::IndexedDbStore;
 use mc_core::ports::{CorpusStore, ReviewStore};
+use storage::IndexedDbStore;
 use ui::{UiResponse, UiState};
 
 thread_local! {

@@ -198,7 +198,7 @@ fn build_wasm(root: &Path) -> Result<(), String> {
         .args([
             "build",
             "-p",
-            "mc_wasm",
+            "wasm",
             "--target",
             "wasm32-unknown-unknown",
             "--release",
@@ -213,7 +213,7 @@ fn build_wasm(root: &Path) -> Result<(), String> {
         fs::remove_dir_all(&output).map_err(|error| format!("清理 dist/pkg 失败：{error}"))?;
     }
     fs::create_dir_all(&output).map_err(|error| format!("创建 dist/pkg 失败：{error}"))?;
-    let wasm = root.join("target/wasm32-unknown-unknown/release/mc_wasm.wasm");
+    let wasm = root.join("target/wasm32-unknown-unknown/release/wasm.wasm");
     let bindgen = env::var("WASM_BINDGEN").unwrap_or_else(|_| "wasm-bindgen".to_string());
     let status = Command::new(bindgen)
         .current_dir(root)

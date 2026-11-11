@@ -1,3 +1,5 @@
+//! ZIP 备份格式的生成与解析。
+
 use std::io::{Cursor, Read, Write};
 
 use mc_core::{Category, Corpus, ReviewState};

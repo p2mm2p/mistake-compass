@@ -6,7 +6,7 @@ import init, {
   render_initial,
   request_persistent_storage,
   run_sync,
-} from "./pkg/mc_wasm.js";
+} from "./pkg/wasm.js";
 import { installHtmxAdapter } from "./htmx-adapter.js";
 
 globalThis.__mcProgress = (event) => {
