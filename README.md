@@ -1,6 +1,9 @@
-# mistake-compass
+![mistake-compass](https://socialify.dev/p2mm2p/mistake-compass/image?font=Inter&language=1&name=1&pattern=Signal&theme=Auto)
 
-把粉笔错题抓取到浏览器扩展，按分类复习。
+<div align="center">
+  <h1>mistake-compass</h1>
+  <p>抓取[粉笔题库](https://www.fenbi.com/spa/tiku/guide/catalog)错题，按分类复习的浏览器拓展，支持 Chrome/Edge、Firefox。</p>
+</div>
 
 ## 安装
 
@@ -35,13 +38,15 @@ Firefox：在 `about:debugging#/runtime/this-firefox` 临时加载 `dist/firefox
 
 题库和复盘状态保存在扩展源的 IndexedDB。
 
-**警告：**卸载扩展会删除 IndexedDB 数据。卸载前先导出备份。
+**警告**：卸载扩展会删除 IndexedDB 数据。卸载前先导出备份。
 
 扩展会请求持久化存储，浏览器可以拒绝该请求（建议允许）。
 
 ## 备份与恢复
 
-点击“导出备份”下载 ZIP。ZIP 结构：
+点击“导出备份”下载 ZIP。
+
+ZIP 结构：
 
 ```text
 backup.zip
@@ -115,9 +120,10 @@ sync   ui
 xtask：构建时调用 cargo、wasm-bindgen 和 ZIP，不进入运行时依赖。
 ```
 
-`mc_core` 不依赖文件系统、网络或浏览器 API。`sync` 和 `ui` 可以依赖 `mc_core`，`mc_core` 不得依赖 `sync` 或 `ui`。
-
-`mc_wasm` 是唯一允许调用浏览器 API 的 Rust crate。`extension/` 只放固定宿主文件。
+- `mc_core` 不依赖文件系统、网络或浏览器 API。
+- `sync` 和 `ui` 单向依赖 `mc_core`。
+- `mc_wasm` 是唯一允许调用浏览器 API 的 Rust crate。
+- `extension/` 基本只放固定宿主文件（`static/` 和 `templates` 除外）。
 
 端口：
 
@@ -131,14 +137,12 @@ xtask：构建时调用 cargo、wasm-bindgen 和 ZIP，不进入运行时依赖�
 
 业务测试使用 `mc_core::testing` 的内存 fake，不启动浏览器。
 
-固定宿主：
+固定宿主（浏览器扩展本身的入口和胶水层）：
 
 `extension/` 以下文件属于固定宿主：
 
-- `app.html`、`app.css`、`app.js`
-- `htmx-adapter.js`
-- `content.js`、`background.js`
-- `host.js`
-- `static/`
-
-普通功能改动只改 Rust 业务 crate 和 `extension/templates/`。manifest 由 `xtask` 生成，不手工维护。
+- `app.html`、`app.css`、`app.js`：扩展页面的 HTML/CSS/JS 骨架。
+- `htmx-adapter.js`：htmx 与扩展（WASM）之间的适配层。
+- `content.js`：内容脚本。
+- `background.js`：后台脚本和 service worker 入口。
+- `host.js`：宿主桥接层，封装浏览器环境相关能力。
