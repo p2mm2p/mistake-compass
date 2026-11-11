@@ -2,29 +2,31 @@
 
 <div align="center">
   <h1>mistake-compass</h1>
-  <p>抓取[粉笔题库](https://www.fenbi.com/spa/tiku/guide/catalog)错题，按分类复习的浏览器拓展，支持 Chrome/Edge、Firefox。</p>
+  <p>抓取<a href="https://www.fenbi.com/spa/tiku/guide/catalog">粉笔题库</a>错题，按分类复习的浏览器拓展，支持 Chrome/Edge、Firefox。</p>
 </div>
 
 ## 安装
 
-构建扩展包：
+### 构建扩展包：
 
 ```sh
 cargo xtask package
 ```
 
-产物：
+### 产物：
 
 - `dist/mistake-compass-chromium.zip`
 - `dist/mistake-compass-firefox.zip`
 
-Chromium：
+### Chromium：
 
 1. 打开 `chrome://extensions` 或 `edge://extensions`。
 2. 打开“开发者模式”。
 3. 选择“加载已解压的扩展”，目录为 `dist/chromium/`。
 
-Firefox：在 `about:debugging#/runtime/this-firefox` 临时加载 `dist/firefox/manifest.json`，或使用 `dist/mistake-compass-firefox.zip`。
+### Firefox：
+
+在 `about:debugging#/runtime/this-firefox` 临时加载 `dist/firefox/manifest.json`，或使用 `dist/mistake-compass-firefox.zip`。
 
 ## 使用
 
@@ -73,21 +75,21 @@ backup.zip
 
 ## 开发
 
-构建前安装：
+### 构建前安装：
 
 ```sh
 rustup target add wasm32-unknown-unknown
 cargo install wasm-bindgen-cli --version 0.2.130 --locked
 ```
 
-运行测试：
+### 运行测试：
 
 ```sh
 cargo xtask help
 cargo test --workspace
 ```
 
-边界检查：
+### 边界检查：
 
 ```sh
 cargo xtask check-deps # `mc_core`、`ui`、`sync` 不允许出现浏览器依赖
@@ -97,7 +99,7 @@ cargo xtask check-deps # `mc_core`、`ui`、`sync` 不允许出现浏览器依�
 
 ## 架构
 
-Crate：
+### Crate：
 
 | crate | 包名 | 职责 |
 | --- | --- | --- |
@@ -107,7 +109,7 @@ Crate：
 | `crates/wasm` | `mc_wasm` | 浏览器适配层：fetch 桥、IndexedDB、ZIP 备份、WASM 导出 |
 | `crates/xtask` | `xtask` | 构建、manifest、静态文件和 ZIP 打包 |
 
-依赖方向：
+### 依赖方向：
 
 ```text
 sync   ui
@@ -125,7 +127,7 @@ xtask：构建时调用 cargo、wasm-bindgen 和 ZIP，不进入运行时依赖�
 - `mc_wasm` 是唯一允许调用浏览器 API 的 Rust crate。
 - `extension/` 基本只放固定宿主文件（`static/` 和 `templates` 除外）。
 
-端口：
+### 端口：
 
 `mc_core::ports` 定义：
 
@@ -137,9 +139,9 @@ xtask：构建时调用 cargo、wasm-bindgen 和 ZIP，不进入运行时依赖�
 
 业务测试使用 `mc_core::testing` 的内存 fake，不启动浏览器。
 
-固定宿主（浏览器扩展本身的入口和胶水层）：
+### 固定宿主：
 
-`extension/` 以下文件属于固定宿主：
+`extension/` 以下文件属于固定宿主（浏览器扩展本身的入口和胶水层）：
 
 - `app.html`、`app.css`、`app.js`：扩展页面的 HTML/CSS/JS 骨架。
 - `htmx-adapter.js`：htmx 与扩展（WASM）之间的适配层。
