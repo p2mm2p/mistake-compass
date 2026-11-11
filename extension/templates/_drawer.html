@@ -2,7 +2,7 @@
   <button type="button" class="drawer-toggle" data-drawer-toggle
           aria-controls="drawer" aria-expanded="true"
           aria-label="收起侧边栏" title="收起侧边栏">
-    {% include "_icon_sidebar.html" %}
+    {% include "icons/_icon_sidebar.html" %}
   </button>
   {% for row in rows %}
   {% if row.kind == RowKind::Dir %}
@@ -10,14 +10,14 @@
        style="padding-left: {{ row.indent }}px"
        hx-get="/drawer?path={{ row.target|urlencode }}&amp;expanded={{ expanded|urlencode }}&amp;selected={{ selected|urlencode }}"
        hx-target="#drawer" hx-swap="outerHTML">
-    <span class="arrow">{% if row.open %}▾{% else %}▸{% endif %}</span>{% include "_icon_dir.html" %}<span class="label">{{ row.label }}</span>
+    <span class="arrow">{% if row.open %}▾{% else %}▸{% endif %}</span>{% include "icons/_icon_dir.html" %}<span class="label">{{ row.label }}</span>
   </div>
   {% else %}
   <div class="node file{% if row.selected %} sel{% endif %}"
        style="padding-left: {{ row.indent }}px"
        hx-get="/open?cat={{ row.target|urlencode }}&amp;expanded={{ expanded|urlencode }}"
        hx-target="#drawer" hx-swap="outerHTML">
-    <span class="arrow"></span>{% include "_icon_file.html" %}<span class="label">{{ row.label }}</span><span class="muted">（{{ row.count }}）</span>
+    <span class="arrow"></span>{% include "icons/_icon_file.html" %}<span class="label">{{ row.label }}</span><span class="muted">（{{ row.count }}）</span>
   </div>
   {% endif %}
   {% endfor %}
