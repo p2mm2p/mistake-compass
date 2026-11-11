@@ -1,0 +1,17 @@
+[package]
+name = "storage"
+version.workspace = true
+edition.workspace = true
+description = "错题罗盘浏览器存储与备份格式"
+
+[dependencies]
+mc_core = { workspace = true }
+sync = { workspace = true }
+
+async-trait = { workspace = true }
+flate2 = { workspace = true }
+indexed_db_futures = { workspace = true }
+js-sys = { workspace = true }
+serde_json = { workspace = true }
+wasm-bindgen = { workspace = true }
+zip = { workspace = true }

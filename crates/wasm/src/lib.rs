@@ -1,15 +1,12 @@
-mod backup;
 mod host;
-mod idb;
 mod sync_runner;
 mod ui_host;
 
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::JsFuture;
 
-pub use backup::{ImportSnapshot, build_archive, parse_archive};
 pub use host::{HostClock, HostFetcher, HostProgress};
-pub use idb::IndexedDbStore;
+pub use storage::{ImportSnapshot, IndexedDbStore, build_archive, parse_archive};
 pub use sync_runner::run_sync;
 pub use ui_host::{handle_request, refresh_ui, render_initial};
 

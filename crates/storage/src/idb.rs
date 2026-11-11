@@ -118,14 +118,14 @@ impl IndexedDbStore {
             .to_iso_string()
             .as_string()
             .unwrap_or_default();
-        crate::backup::build_archive(active.corpus.categories(), &review, &exported_at)
+        super::backup::build_archive(active.corpus.categories(), &review, &exported_at)
     }
 
     pub async fn import_archive(
         &self,
         bytes: &[u8],
-    ) -> Result<crate::backup::ImportSnapshot, String> {
-        let snapshot = crate::backup::parse_archive(bytes)?;
+    ) -> Result<super::backup::ImportSnapshot, String> {
+        let snapshot = super::backup::parse_archive(bytes)?;
         self.import_snapshot(snapshot.categories.clone(), &snapshot.review)
             .await?;
         Ok(snapshot)

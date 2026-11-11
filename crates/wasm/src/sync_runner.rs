@@ -1,10 +1,10 @@
 use std::time::Duration;
 
+use storage::IndexedDbStore;
 use sync::state::{SyncOptions, run};
 use wasm_bindgen::prelude::*;
 
 use crate::host::{HostClock, HostFetcher, HostProgress};
-use crate::idb::IndexedDbStore;
 
 #[wasm_bindgen]
 pub async fn run_sync(generation: &str) -> Result<String, JsValue> {
