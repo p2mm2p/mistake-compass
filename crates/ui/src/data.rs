@@ -1,6 +1,6 @@
 //! 页面层复用的领域类型与测试期目录载入。
 //!
-//! 生产环境由 WASM 宿主提供题库；目录载入只在测试中使用。
+//! 运行时，题库由调用方提供，目录载入只在测试中使用。
 
 pub use mc_core::{
     Category, Corpus, DirNode, FIELDS, FileNode, Level, Number, Question, QuestionType,
