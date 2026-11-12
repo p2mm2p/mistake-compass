@@ -1,3 +1,7 @@
+//! 错题罗盘领域模型、纯逻辑与端口契约。
+//!
+//! 本 crate 不依赖浏览器 API；持久化、网络和时钟通过 `ports` 注入。
+
 pub mod corpus;
 pub mod ports;
 pub mod question;

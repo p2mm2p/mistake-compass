@@ -1,3 +1,7 @@
+//! 构建扩展、生成 ZIP，并检查业务 crate 的浏览器依赖边界。
+//!
+//! Chromium 与 Firefox 只在 manifest 的后台入口和浏览器专用字段上不同。
+
 use std::env;
 use std::fs;
 use std::io::Write;
@@ -137,6 +141,7 @@ fn print_build_help() {
 }
 
 fn check_deps(root: &Path) -> Result<(), String> {
+    // 只检查 normal 依赖：构建期工具不会进入发布产物
     let output = Command::new("cargo")
         .current_dir(root)
         .args([
@@ -153,6 +158,7 @@ fn check_deps(root: &Path) -> Result<(), String> {
         .lines()
         .filter_map(|line| line.split_whitespace().next())
         .filter(|name| {
+            // 逐个比对包名，防止浏览器依赖从领域层漏进可移植 crate
             FORBIDDEN_BROWSER_DEPS.contains(name)
                 || name.starts_with("gloo-")
                 || name.starts_with("wasm-bindgen-")
@@ -193,6 +199,7 @@ fn build(root: &Path, browser: Option<Browser>) -> Result<(), String> {
 }
 
 fn build_wasm(root: &Path) -> Result<(), String> {
+    // wasm-bindgen 的输出是扩展实际加载的产物，不把 target 目录直接交给浏览器
     let status = Command::new("cargo")
         .current_dir(root)
         .args([
@@ -209,6 +216,7 @@ fn build_wasm(root: &Path) -> Result<(), String> {
         return Err("WASM 编译失败".to_string());
     }
     let output = root.join("dist").join("pkg");
+    // 每次重建 dist/pkg，避免旧绑定文件残留
     if output.exists() {
         fs::remove_dir_all(&output).map_err(|error| format!("清理 dist/pkg 失败：{error}"))?;
     }
@@ -231,6 +239,7 @@ fn build_wasm(root: &Path) -> Result<(), String> {
 
 fn build_browser(root: &Path, browser: Browser) -> Result<(), String> {
     let target = root.join("dist").join(browser.name());
+    // 每个浏览器单独组装；旧目录先删掉，防止已移除的文件继续打包
     if target.exists() {
         fs::remove_dir_all(&target)
             .map_err(|error| format!("清理 {} 失败：{error}", target.display()))?;
@@ -274,6 +283,7 @@ fn manifest(browser: Browser) -> serde_json::Value {
             "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
         }
     });
+    // Chromium 使用 service worker，Firefox 使用后台脚本
     match browser {
         Browser::Chromium => {
             value["background"] = json!({ "service_worker": "background.js" });
@@ -312,6 +322,7 @@ fn write_zip(dir: &Path, target: &Path) -> Result<(), String> {
         .last_modified_time(zip::DateTime::default());
     let mut files = Vec::new();
     collect_files(dir, dir, &mut files)?;
+    // 条目按相对路径排序，配合固定修改时间生成可重复的 ZIP
     files.sort();
     for (path, relative) in files {
         writer

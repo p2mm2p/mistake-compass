@@ -1,3 +1,8 @@
+//! IndexedDB 题库与复盘状态存储。
+//!
+//! 分类按 generation 分键；活动快照只由 `active_generation` 指向。
+//! 本模块只处理 IndexedDB；ZIP 备份由 `backup` 解析和生成。
+
 use async_trait::async_trait;
 use indexed_db_futures::database::Database;
 use indexed_db_futures::prelude::*;
@@ -12,15 +17,26 @@ const META: &str = "meta";
 const CATEGORIES: &str = "categories";
 const REVIEW: &str = "review";
 
+/// IndexedDB 存储
 pub struct IndexedDbStore {
     db: Database,
 }
 
 impl IndexedDbStore {
+    /// 打开默认数据库。
+    ///
+    /// # Errors
+    ///
+    /// 浏览器拒绝打开数据库或创建对象仓库失败时返回错误。
     pub async fn open() -> Result<IndexedDbStore, String> {
         Self::open_named(DB_NAME).await
     }
 
+    /// 打开指定名称的数据库；测试用独立数据库隔离数据。
+    ///
+    /// # Errors
+    ///
+    /// 浏览器拒绝打开数据库或创建对象仓库失败时返回错误。
     pub async fn open_named(name: &str) -> Result<IndexedDbStore, String> {
         let db = Database::open(name)
             .with_version(1u8)
@@ -108,6 +124,11 @@ impl IndexedDbStore {
         Ok(categories)
     }
 
+    /// 导出当前活动题库和复盘状态为 ZIP。
+    ///
+    /// # Errors
+    ///
+    /// 没有活动题库、读取状态或写 ZIP 失败时返回错误。
     pub async fn export_archive(&self) -> Result<Vec<u8>, String> {
         let active = self
             .active()
@@ -121,6 +142,13 @@ impl IndexedDbStore {
         super::backup::build_archive(active.corpus.categories(), &review, &exported_at)
     }
 
+    /// 导入 ZIP，并在同一事务内切换到新 generation。
+    ///
+    /// 导入先完整解析和校验备份，再写入分类、复盘状态和活动指针。
+    ///
+    /// # Errors
+    ///
+    /// 备份校验、写库或事务提交失败时返回错误。
     pub async fn import_archive(
         &self,
         bytes: &[u8],

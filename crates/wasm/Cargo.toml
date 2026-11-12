@@ -7,6 +7,9 @@ description = "错题罗盘 WASM 宿主适配层"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[lints]
+workspace = true
+
 [dependencies]
 mc_core = { workspace = true }
 storage = { workspace = true }

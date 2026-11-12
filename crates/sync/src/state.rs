@@ -1,3 +1,7 @@
+//! 错题抓取状态机：分类树、批次请求、重试、失败阈值和快照切换。
+//!
+//! 抓取期间不修改活动快照；只有装配和校验全部成功后才调用 `activate`。
+
 use std::collections::HashSet;
 use std::fmt;
 use std::time::Duration;
@@ -8,11 +12,17 @@ use serde_json::Value;
 
 use crate::model::{Batch, Node, build_nodes, build_records, collect_ids, pick_node};
 
+/// 同步参数
 pub struct SyncOptions {
+    /// 新快照的 generation 标识
     pub generation: String,
+    /// 每次成功请求后的基础等待时长
     pub delay: Duration,
+    /// 每批题数，最小按 1 处理
     pub batch_size: usize,
+    /// 单个请求的最大尝试次数
     pub max_attempts: u32,
+    /// 允许的失败率上限
     pub failure_limit: f64,
 }
 
@@ -28,22 +38,40 @@ impl Default for SyncOptions {
     }
 }
 
+/// 一次同步的统计结果
 #[derive(Debug, Clone, PartialEq)]
 pub struct SyncReport {
+    /// 装配的题数
     pub questions: usize,
+    /// 有题目的分类数
     pub categories: usize,
+    /// 批次数
     pub batches: usize,
+    /// 请求总数，含重试
     pub requests: usize,
+    /// 失败尝试数
     pub failures: usize,
 }
 
+/// 同步失败原因
 #[derive(Debug, Clone, PartialEq)]
 pub enum SyncError {
+    /// 登录态失效，携带 HTTP 状态码
     Auth(u16),
+    /// 分类树没有错题
     Empty,
-    FailureRate { rate: f64, limit: f64 },
+    /// 失败率超过上限
+    FailureRate {
+        /// 实际失败率
+        rate: f64,
+        /// 配置上限
+        limit: f64,
+    },
+    /// 请求重试后仍然失败
     Fetch(String),
+    /// 上游响应结构不符合预期
     Protocol(String),
+    /// 题库存储操作失败
     Store(String),
 }
 
@@ -71,6 +99,13 @@ impl fmt::Display for SyncError {
 
 impl std::error::Error for SyncError {}
 
+/// 执行同步：抓取分类树和分批题目，装配并校验题库，再切换快照。
+///
+/// 任一阶段失败时通过 `progress.error` 报告，并保持活动快照不变。
+///
+/// # Errors
+///
+/// 登录失效、分类为空、失败率超限、响应格式不符或存储失败时返回错误。
 pub async fn run<F, K, P, S>(
     fetcher: &F,
     clock: &K,
@@ -143,6 +178,7 @@ where
             fetch_batch(fetcher, clock, &csv, options, &mut requests, &mut failures).await?;
         batches.push(batch);
         progress.batch(batch_no + 1, batches_total);
+        // 失败率按累计请求计算；超过上限时，后续批次不再发送
         let rate = failures as f64 / requests.max(1) as f64;
         if rate > options.failure_limit {
             return Err(SyncError::FailureRate {
@@ -263,6 +299,7 @@ where
             }
             Ok(FetchResponse { status, body }) => {
                 if status == 401 || status == 453 {
+                    // 登录态问题重试不会恢复，立即结束
                     return Err(SyncError::Auth(status));
                 }
                 *failures += 1;
@@ -277,6 +314,7 @@ where
             }
         }
         if attempt < options.max_attempts {
+            // 线性退避，给上游和网络恢复留出时间
             clock.sleep(options.delay * attempt * 2).await;
         }
     }

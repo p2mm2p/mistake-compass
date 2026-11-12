@@ -13,151 +13,217 @@ use crate::review::{Entry, Review, State};
 /// 界面上靠图标区分目录与文件。同名目录与其文件会显示成同样的两个字，
 /// 差别只在图标与点击行为。
 pub struct DrawerRow {
-    /// 界面上的文字：目录是目录名，文件是分类名。
+    /// 界面上的文字：目录是目录名，文件是分类名
     pub label: String,
-    /// 点击目标：目录是目录路径，文件是分类路径。
+    /// 点击目标：目录是目录路径，文件是分类路径
     pub target: String,
+    /// 行类型
     pub kind: RowKind,
+    /// 左侧缩进量，单位为像素
     pub indent: usize,
-    /// 目录是否展开；文件恒为 `false`。
+    /// 目录是否展开；文件恒为 `false`
     pub open: bool,
+    /// 是否是当前选中分类
     pub selected: bool,
-    /// 文件自己的题数；目录不显示数字。
+    /// 文件自己的题数；目录不显示数字
     pub count: usize,
 }
 
-/// 抽屉行的两种身份。
+/// 抽屉行的两种身份
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RowKind {
+    /// 目录行，只切换展开态
     Dir,
+    /// 文件行，打开分类
     File,
 }
 
-/// 分类头部的汇总。
+/// 分类头部的汇总
 pub struct Summary {
+    /// 分类显示名
     pub title: String,
+    /// 完整分类路径
     pub path: String,
+    /// 分类题数
     pub total: usize,
+    /// 待强化题数
     pub weak: usize,
+    /// 已复盘题数
     pub reviewed: usize,
+    /// 未复盘题数
     pub fresh: usize,
 }
 
-/// 一个选项。
+/// 一个选项
 pub struct OptionView {
+    /// 表单提交值
     pub key: String,
+    /// 界面显示文本
     pub text: String,
 }
 
-/// 作答反馈。
+/// 作答反馈
 pub struct Feedback {
+    /// 是否答对
     pub correct: bool,
+    /// 用户答案；未选时显示占位文本
     pub picked: String,
+    /// 标准答案
     pub expected: String,
+    /// 作答后的状态
     pub state: State,
 }
 
-/// 上次作答的摘要。
+/// 上次作答的摘要
 pub struct LastAnswer {
+    /// 上次作答内容
     pub answer: String,
+    /// 上次作答结果
     pub result: String,
 }
 
-/// 做题面板里的题。
+/// 做题面板里的题
 pub struct QuestionView {
+    /// 题目标识
     pub fb: i64,
+    /// 分类路径
     pub cat: String,
+    /// 题型文案
     pub kind: &'static str,
+    /// 当前复盘状态
     pub state: State,
+    /// 显示用难度
     pub difficulty: String,
+    /// 显示用正确率
     pub ratio: String,
+    /// 来源
     pub source: String,
+    /// 材料 HTML
     pub material: Option<String>,
+    /// 题干 HTML
     pub stem: String,
+    /// 解析 HTML
     pub solution: String,
+    /// 选项
     pub options: Vec<OptionView>,
+    /// 是否多选
     pub multi: bool,
-    /// 在数组里的位置（下标 + 1）。
+    /// 在数组里的位置（下标 + 1）
     pub position: usize,
-    /// 形成列表时的可做题数（M）。
+    /// 形成列表时的可做题数（M）
     pub total: usize,
+    /// 上一道可做题的 `fb`
     pub prev: Option<i64>,
+    /// 下一道可做题的 `fb`
     pub next: Option<i64>,
+    /// 本次作答反馈
     pub feedback: Option<Feedback>,
+    /// 上次作答摘要
     pub last: Option<LastAnswer>,
 }
 
-/// 没有可做题时的完成态。
+/// 没有可做题时的完成态
 pub struct DoneView {
+    /// 分类路径
     pub cat: String,
+    /// 查询参数里的展开集合
     pub expanded: String,
+    /// 分类题数
     pub total: usize,
+    /// 已复盘题数
     pub reviewed: usize,
 }
 
-/// 已复盘列表的一行。
+/// 已复盘列表的一行
 #[derive(Clone)]
 pub struct ReviewedRow {
+    /// 题目标识
     pub fb: i64,
-    /// 在数组里的位置（下标 + 1）。
+    /// 在数组里的位置（下标 + 1）
     pub position: usize,
+    /// 来源
     pub source: String,
+    /// 当前状态
     pub state: State,
 }
 
-/// 已复盘列表。
+/// 已复盘列表
 pub struct ReviewedView {
+    /// 分类路径
     pub cat: String,
+    /// 查询参数里的展开集合
     pub expanded: String,
+    /// 分类显示名
     pub name: String,
+    /// 已复盘列表行
     pub rows: Vec<ReviewedRow>,
 }
 
 // ---------------------------------------------------------------- 模板
 
+/// 完整页面模板
 #[derive(Template)]
 #[template(path = "index.html")]
 pub struct IndexPage {
+    /// 抽屉行
     pub rows: Vec<DrawerRow>,
+    /// 查询参数里的展开集合
     pub expanded: String,
+    /// 当前选中分类
     pub selected: String,
+    /// 分类头部汇总
     pub summary: Option<Summary>,
 }
 
+/// 抽屉局部替换模板
 #[derive(Template)]
 #[template(path = "_drawer.html")]
 pub struct DrawerFragment {
+    /// 抽屉行
     pub rows: Vec<DrawerRow>,
+    /// 查询参数里的展开集合
     pub expanded: String,
+    /// 当前选中分类
     pub selected: String,
 }
 
+/// 顶部片段模板
 #[derive(Template)]
 #[template(path = "_top.html")]
 pub struct TopFragment {
+    /// 分类头部汇总
     pub summary: Option<Summary>,
+    /// 查询参数里的展开集合
     pub expanded: String,
 }
 
+/// 做题面板局部替换模板
 #[derive(Template)]
 #[template(path = "_question.html")]
 pub struct QuestionFragment {
+    /// 当前题；没有可做题时为 `None`
     pub view: Option<QuestionView>,
+    /// 完成态；仍有可做题时为 `None`
     pub done: Option<DoneView>,
 }
 
+/// 已复盘列表局部替换模板
 #[derive(Template)]
 #[template(path = "_reviewed.html")]
 pub struct ReviewedFragment {
+    /// 分类路径
     pub cat: String,
+    /// 查询参数里的展开集合
     pub expanded: String,
+    /// 分类显示名
     pub name: String,
+    /// 已复盘列表行
     pub rows: Vec<ReviewedRow>,
 }
 
 // ---------------------------------------------------------------- 装配
 
-/// `expanded` 参数是逗号分隔的已展开节点路径。
+/// `expanded` 参数是逗号分隔的已展开节点路径
 pub fn parse_expanded(raw: &str) -> Vec<String> {
     raw.split(',')
         .map(str::trim)
@@ -166,12 +232,12 @@ pub fn parse_expanded(raw: &str) -> Vec<String> {
         .collect()
 }
 
-/// 展开集合序列化回查询参数。
+/// 展开集合序列化回查询参数
 pub fn join_expanded(expanded: &[String]) -> String {
     expanded.join(",")
 }
 
-/// 点击节点后的展开态：已展开则收起，否则展开。
+/// 点击节点后的展开态：已展开则收起，否则展开
 pub fn toggle_expanded(expanded: &[String], path: &str) -> Vec<String> {
     let mut next = expanded.to_vec();
     match next.iter().position(|item| item == path) {
@@ -183,7 +249,7 @@ pub fn toggle_expanded(expanded: &[String], path: &str) -> Vec<String> {
     next
 }
 
-/// 把目录树按展开态压平成带缩进的行：每层都是“先目录、后文件”。
+/// 把目录树按展开态压平成带缩进的行：每层都是“先目录、后文件”
 pub fn drawer_rows(
     level: &Level,
     expanded: &[String],
@@ -208,7 +274,7 @@ pub fn drawer_rows(
     }
     rows.extend(level.files.iter().map(|file| {
         DrawerRow {
-            // 文件行只显示分类名本身，不带 `.yaml`。
+            // 文件行只显示分类名本身，不带 `.yaml`
             label: file
                 .category
                 .rsplit('/')
@@ -226,7 +292,7 @@ pub fn drawer_rows(
     rows
 }
 
-/// 分类头部汇总。
+/// 分类头部汇总
 pub fn summary(corpus: &Corpus, review: &Review, path: &str) -> Option<Summary> {
     let category = corpus.category(path)?;
     let states: Vec<State> = category
@@ -255,12 +321,15 @@ pub fn summary(corpus: &Corpus, review: &Review, path: &str) -> Option<Summary> 
 /// 因此“第 N / M 题”的编号在作答期间不变。`total` 是形成列表时的可做题数。
 #[derive(Debug, Clone)]
 pub struct Order {
+    /// 分类路径
     pub cat: String,
+    /// 按做题顺序排列的题目 ID，包含已复盘题
     pub ids: Vec<i64>,
+    /// 形成列表时的可做题数
     pub total: usize,
 }
 
-/// 按当前状态排出该分类的数组；分类不存在时返回 `None`。
+/// 按当前状态排出该分类的数组；分类不存在时返回 `None`
 pub fn build_order(corpus: &Corpus, review: &Review, path: &str) -> Option<Order> {
     let category = corpus.category(path)?;
     let mut weak = Vec::new();
@@ -282,12 +351,12 @@ pub fn build_order(corpus: &Corpus, review: &Review, path: &str) -> Option<Order
     })
 }
 
-/// 可做题：还没标记为已复盘的题。
+/// 可做题：还没标记为已复盘的题
 fn workable(review: &Review, fb: i64) -> bool {
     review.state(fb) != State::Reviewed
 }
 
-/// 本分类已复盘的题：过滤数组，按数组顺序显示；编号取数组下标。
+/// 本分类已复盘的题：过滤数组，按数组顺序显示；编号取数组下标
 pub fn reviewed_rows(corpus: &Corpus, review: &Review, order: &Order) -> Vec<ReviewedRow> {
     order
         .ids
@@ -311,7 +380,7 @@ pub fn reviewed_rows(corpus: &Corpus, review: &Review, order: &Order) -> Vec<Rev
 /// 组装做题面板。
 ///
 /// `anchor` 是“客户端当前在看的那一题”：作答后即使该题已不再可做，也要继续显示，
-/// 编号仍是它在数组里的位置；上一题 / 下一题在数组里跳过已复盘的题。
+/// 编号仍是该题在数组里的位置；上一题 / 下一题在数组里跳过已复盘的题。
 pub fn question_view(
     corpus: &Corpus,
     review: &Review,
@@ -325,7 +394,7 @@ pub fn question_view(
     };
     let fb = order.ids[at];
     let question = corpus.question(fb)?;
-    // 上一题 / 下一题：在数组里往前 / 往后找最近的、不是已复盘的题。
+    // 上一题 / 下一题：在数组里往前 / 往后找最近的、不是已复盘的题
     let prev = order.ids[..at]
         .iter()
         .rev()
@@ -336,7 +405,7 @@ pub fn question_view(
         .find(|&&id| workable(review, id))
         .copied();
 
-    // 判断题没有选项字段，界面给出“对 / 错”二选一。
+    // 判断题没有选项字段，界面给出“对 / 错”二选一
     let options: Vec<OptionView> =
         if question.kind == QuestionType::Judge && question.options().is_empty() {
             ["对", "错"]
@@ -392,7 +461,7 @@ pub fn question_view(
     })
 }
 
-/// 完成态：本分类没有待复盘的题。
+/// 完成态：本分类没有待复盘的题
 pub fn done_view(corpus: &Corpus, review: &Review, path: &str, expanded: &str) -> Option<DoneView> {
     let category = corpus.category(path)?;
     if category.questions.is_empty()
@@ -416,7 +485,7 @@ pub fn done_view(corpus: &Corpus, review: &Review, path: &str, expanded: &str) -
     })
 }
 
-/// 一题的状态与最近作答，供已复盘列表与调试读取。
+/// 一题的状态与最近作答，供已复盘列表与调试读取
 pub fn entry_of(review: &Review, fb: i64) -> (State, Option<&Entry>) {
     (review.state(fb), review.entry(fb))
 }
@@ -501,7 +570,7 @@ mod tests {
         assert_eq!(view.prev, Some(101));
         assert_eq!(view.next, None);
 
-        // 不带锚定时看第一道可做题：103（待强化排最前）。
+        // 不带锚定时看第一道可做题：103（待强化排最前）
         let first = question_view(&corpus, &review, &order, None, None).expect("应渲染出题");
         assert_eq!(first.fb, 103);
         assert_eq!(first.position, 1);
@@ -569,7 +638,7 @@ mod tests {
 
     #[test]
     fn drawer_rows_indent_dirs_then_files() {
-        // 目录链 `甲/乙/` 下面是文件 `丙.yaml`：三行、逐层缩进，只有文件可被选中。
+        // 目录链 `甲/乙/` 下面是文件 `丙.yaml`：三行、逐层缩进，只有文件可被选中
         let (root, corpus) = corpus_with("drawer", "甲/乙/丙", 1);
         let level = crate::data::build_level(&corpus);
         let rows = drawer_rows(
@@ -658,7 +727,7 @@ mod tests {
 
     #[test]
     fn a_lone_file_still_renders_as_dir_then_file() {
-        // 目录只有一个子文件时也必须照实显示两行，不能折叠成一行。
+        // 目录只有一个子文件时也必须照实显示两行，不能折叠成一行
         let root = tempdir("drawer-lone");
         let dir = root.join("data");
         std::fs::create_dir_all(&dir).expect("创建数据目录失败");
