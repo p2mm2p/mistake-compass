@@ -1,3 +1,7 @@
+//! 浏览器宿主适配：fetch、计时器和进度桥。
+//!
+//! 通过 `globalThis.__mcExtensionHost.fetch` 与 `globalThis.__mcProgress` 连接扩展脚本。
+
 use std::time::Duration;
 
 use async_trait::async_trait;
@@ -12,11 +16,15 @@ extern "C" {
     fn fetch(host: &str, path: &str, query: JsValue) -> js_sys::Promise;
 }
 
+/// 通过扩展脚本代理请求的 `Fetcher` 适配器
 pub struct HostFetcher {
     host: String,
 }
 
 impl HostFetcher {
+    /// 用目标主机名创建。
+    ///
+    /// `host` 传给扩展脚本，由浏览器侧发起请求。
     pub fn new(host: impl Into<String>) -> HostFetcher {
         HostFetcher { host: host.into() }
     }
@@ -48,6 +56,7 @@ impl Fetcher for HostFetcher {
     }
 }
 
+/// 用浏览器定时器等待的时钟适配器
 pub struct HostClock;
 
 #[async_trait(?Send)]
@@ -58,6 +67,7 @@ impl Clock for HostClock {
     }
 }
 
+/// 把进度事件转成 JSON 并调用 `globalThis.__mcProgress`
 pub struct HostProgress;
 
 impl HostProgress {

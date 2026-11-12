@@ -15,7 +15,7 @@ const AMBIGUOUS: [&str; 11] = [
 static HEXLIKE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^[-+]?0[xXoObB]").unwrap());
 static DATELIKE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\d{4}-\d{1,2}-\d{1,2}").unwrap());
 
-/// 为真时可以裸写；否则必须加引号。
+/// 为真时可以裸写；否则必须加引号
 pub fn plain_ok(s: &str) -> bool {
     if s.is_empty() || s.trim() != s {
         return false;
@@ -45,7 +45,7 @@ pub fn plain_ok(s: &str) -> bool {
     true
 }
 
-/// 复刻 Python `float(s)` 的接受面（含下划线分隔、inf/infinity/nan、正负号）。
+/// 复刻 Python `float(s)` 的接受面（含下划线分隔、inf/infinity/nan、正负号）
 fn py_float_ok(s: &str) -> bool {
     let chars: Vec<char> = s.chars().collect();
     let mut i = 0usize;
@@ -96,7 +96,7 @@ fn py_float_ok(s: &str) -> bool {
     i == chars.len()
 }
 
-/// 字符串标量：裸写 / 单引号 / JSON 双引号三档。
+/// 字符串标量：裸写 / 单引号 / JSON 双引号三档
 pub fn scalar_str(s: &str) -> String {
     if plain_ok(s) {
         return s.to_string();
@@ -107,7 +107,7 @@ pub fn scalar_str(s: &str) -> String {
     json_dumps_string(s)
 }
 
-/// `Option<&str>` 的标量写法；缺值写 `null`。
+/// `Option<&str>` 的标量写法；缺值写 `null`
 pub fn scalar_opt_str(v: Option<&str>) -> String {
     match v {
         Some(s) => scalar_str(s),
@@ -115,7 +115,7 @@ pub fn scalar_opt_str(v: Option<&str>) -> String {
     }
 }
 
-/// 整数标量写法。
+/// 整数标量写法
 pub fn scalar_i64(v: i64) -> String {
     v.to_string()
 }
@@ -143,7 +143,7 @@ pub fn py_repr_float(v: f64) -> String {
     format!("{v}")
 }
 
-/// Python `round(x, 2)`：对二进制精确值做 half-even 取整，避免 `x * 100` 的二次误差。
+/// Python `round(x, 2)`：对二进制精确值做 half-even 取整，避免 `x * 100` 的二次误差
 pub fn py_round2(x: f64) -> f64 {
     if !x.is_finite() || x == 0.0 {
         return x;
@@ -174,7 +174,7 @@ pub fn py_round2(x: f64) -> f64 {
     if neg { -y } else { y }
 }
 
-/// 能一行写完就写 `[a, b]`，否则交给调用方写块列表。
+/// 能一行写完就写 `[a, b]`，否则交给调用方写块列表
 pub fn keypoints_inline(names: &[String]) -> Option<String> {
     if names.is_empty() {
         return None;
@@ -186,7 +186,7 @@ pub fn keypoints_inline(names: &[String]) -> Option<String> {
     }
 }
 
-/// Python `json.dumps(s, ensure_ascii=False)` 的字符串字面量形式。
+/// Python `json.dumps(s, ensure_ascii=False)` 的字符串字面量形式
 fn json_dumps_string(s: &str) -> String {
     let mut out = String::with_capacity(s.len() + 2);
     out.push('"');
@@ -228,14 +228,14 @@ mod tests {
 
     #[test]
     fn quotes_are_escaped() {
-        // 裸写判据只看首字符：句中出现单引号不影响裸写。
+        // 裸写判据只看首字符：句中出现单引号不影响裸写
         assert_eq!(scalar_str("it's"), "it's");
-        // 不能裸写、又不含单引号时，用单引号包裹。
+        // 不能裸写、又不含单引号时，用单引号包裹
         assert_eq!(scalar_str("123"), "'123'");
-        // 裸写判据只看首字符与整体形态，句中出现单引号仍可裸写。
+        // 裸写判据只看首字符与整体形态，句中出现单引号仍可裸写
         assert_eq!(scalar_str("12'3"), "12'3");
         assert_eq!(scalar_str("'开头"), "\"'开头\"");
-        // 含换行只能退回 JSON 双引号形式。
+        // 含换行只能退回 JSON 双引号形式
         assert_eq!(scalar_str("a\nb"), "\"a\\nb\"");
     }
 

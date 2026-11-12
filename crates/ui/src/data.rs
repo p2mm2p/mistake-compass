@@ -1,8 +1,19 @@
+//! 页面层复用的领域类型与测试期目录载入。
+//!
+//! 生产环境由 WASM 宿主提供题库；目录载入只在测试中使用。
+
 pub use mc_core::{
     Category, Corpus, DirNode, FIELDS, FileNode, Level, Number, Question, QuestionType,
     build_level, build_tree,
 };
 
+/// 从目录载入测试题库。
+///
+/// 递归读取 `.yaml` 文件，并按相对路径生成分类路径。
+///
+/// # Errors
+///
+/// 目录读取、文件读取或题库校验失败时返回错误。
 #[cfg(test)]
 pub fn load(dir: &std::path::Path) -> Result<Corpus, String> {
     let mut paths = Vec::new();

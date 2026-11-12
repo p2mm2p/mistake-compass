@@ -1,4 +1,4 @@
-//! ZIP 备份格式的生成与解析。
+//! ZIP 备份格式的生成与解析
 
 use std::io::{Cursor, Read, Write};
 
@@ -7,14 +7,26 @@ use serde_json::{Value, json};
 
 const FORMAT_VERSION: u64 = 1;
 
+/// 从备份解析出的导入快照
 #[derive(Debug)]
 pub struct ImportSnapshot {
+    /// 分类与题目
     pub categories: Vec<Category>,
+    /// 复盘状态
     pub review: ReviewState,
+    /// 备份格式版本
     pub format_version: u64,
+    /// 题目总数
     pub question_count: usize,
 }
 
+/// 生成 ZIP 备份。
+///
+/// ZIP 包含 `meta.json`、`data/<分类>.yaml` 和 `review/state.yaml`。
+///
+/// # Errors
+///
+/// 序列化或写 ZIP 失败时返回错误。
 pub fn build_archive(
     categories: &[Category],
     review: &ReviewState,
@@ -60,6 +72,14 @@ pub fn build_archive(
     Ok(bytes)
 }
 
+/// 解析并校验 ZIP 备份。
+///
+/// 分类文件会经过 `parse_category` 和 `Corpus::new` 校验。
+/// 低于当前格式版本或缺少 `meta.json` 的备份仍可导入；更高版本直接拒绝。
+///
+/// # Errors
+///
+/// ZIP、YAML、题目唯一性或版本号不符合要求时返回错误。
 pub fn parse_archive(bytes: &[u8]) -> Result<ImportSnapshot, String> {
     let mut archive = zip::ZipArchive::new(Cursor::new(bytes))
         .map_err(|error| format!("备份不是合法 ZIP：{error}"))?;
@@ -119,12 +139,12 @@ pub fn parse_archive(bytes: &[u8]) -> Result<ImportSnapshot, String> {
     } else {
         (FORMAT_VERSION, None)
     };
-    if let Some(expected) = expected_count {
-        if expected != question_count {
-            return Err(format!(
-                "meta.json 记录 {expected} 题，实际读到 {question_count} 题"
-            ));
-        }
+    if let Some(expected) = expected_count
+        && expected != question_count
+    {
+        return Err(format!(
+            "meta.json 记录 {expected} 题，实际读到 {question_count} 题"
+        ));
     }
 
     let review = if names.iter().any(|name| name == "review/state.yaml") {

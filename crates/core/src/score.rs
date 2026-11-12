@@ -1,5 +1,12 @@
+//! 答案规范化与判分。
+//!
+//! 多选题比较字符集合；缺标准答案时任何作答都判错。
+
 use crate::question::{Question, QuestionType};
 
+/// 判断作答是否正确。
+///
+/// 多选题忽略选项顺序，但要求集合完全一致；缺标准答案时返回 `false`。
 pub fn is_correct(question: &Question, answer: &str) -> bool {
     let expected = question.answer();
     if expected.is_empty() {
@@ -17,6 +24,7 @@ pub fn is_correct(question: &Question, answer: &str) -> bool {
     }
 }
 
+/// 合并选项：去首尾空白、去空值、排序并去重
 pub fn normalize_answer(picked: &[String]) -> String {
     let mut values: Vec<String> = picked
         .iter()

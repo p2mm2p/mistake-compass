@@ -1,3 +1,5 @@
+//! 把同步状态机接到浏览器宿主与 IndexedDB
+
 use std::time::Duration;
 
 use storage::IndexedDbStore;
@@ -6,6 +8,11 @@ use wasm_bindgen::prelude::*;
 
 use crate::host::{HostClock, HostFetcher, HostProgress};
 
+/// 从浏览器抓取题库并切换到 `generation` 对应的快照。
+///
+/// # Errors
+///
+/// 数据库打开、同步状态机或快照切换失败时转为 `JsValue`。
 #[wasm_bindgen]
 pub async fn run_sync(generation: &str) -> Result<String, JsValue> {
     let store = IndexedDbStore::open()

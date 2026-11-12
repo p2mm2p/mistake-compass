@@ -9,21 +9,21 @@ use serde_json::Value;
 
 use crate::scalar::py_round2;
 
-/// 分类树上的一个节点。
+/// 分类树上的一个节点
 #[derive(Debug, Clone)]
 pub struct Node {
     pub name: String,
     pub depth: usize,
-    /// 先序序号，用于“同深并列取先出现者”。
+    /// 先序序号，用于“同深并列取先出现者”
     pub seq: usize,
     pub path: Vec<String>,
     pub question_ids: Vec<i64>,
 }
 
-/// 资料分析类题目会同时挂在“材料类型”节点下；并列时优先选非材料类型。
+/// 资料分析类题目会同时挂在“材料类型”节点下；并列时优先选非材料类型
 const MATERIAL_TYPE: [&str; 4] = ["文字资料", "统计表", "统计图", "综合资料"];
 
-/// 按先序遍历分类树，得到扁平节点列表。
+/// 按先序遍历分类树，得到扁平节点列表
 pub fn build_nodes(tree: &Value) -> Result<Vec<Node>, String> {
     let roots = tree
         .as_array()
@@ -67,7 +67,7 @@ fn walk(
     Ok(())
 }
 
-/// 全库错题 id：按分类树先序遍历收集，首次出现的位置决定顺序。
+/// 全库错题 id：按分类树先序遍历收集，首次出现的位置决定顺序
 pub fn collect_ids(nodes: &[Node]) -> Vec<i64> {
     let mut seen = HashMap::new();
     let mut ids = Vec::new();
@@ -81,7 +81,7 @@ pub fn collect_ids(nodes: &[Node]) -> Vec<i64> {
     ids
 }
 
-/// 每题归属的分类节点下标：先取最深，同深优先非材料类型，再取先序最靠前。
+/// 每题归属的分类节点下标：先取最深，同深优先非材料类型，再取先序最靠前
 pub fn pick_node(fb: i64, nodes: &[Node]) -> Option<usize> {
     let mut best: Vec<usize> = Vec::new();
     for (index, node) in nodes.iter().enumerate() {
@@ -109,7 +109,7 @@ pub fn pick_node(fb: i64, nodes: &[Node]) -> Option<usize> {
 
 // ---------------------------------------------------------------- 响应装配
 
-/// 一个批次的原始响应：题目 / 解析 / 材料来自 solutions，其余三个接口各返回一个数组。
+/// 一个批次的原始响应：题目 / 解析 / 材料来自 solutions，其余三个接口各返回一个数组
 #[derive(Debug)]
 pub struct Batch {
     pub solutions: Vec<Value>,
@@ -120,7 +120,7 @@ pub struct Batch {
 }
 
 impl Batch {
-    /// 从四个接口的响应正文装配；形状不对时报错而不是静默丢数据。
+    /// 从四个接口的响应正文装配；形状不对时报错而不是静默丢数据
     pub fn from_responses(
         solutions: Value,
         metas: Value,
@@ -166,7 +166,7 @@ pub fn build_records(ids: &[i64], batches: &[Batch]) -> Result<Vec<Question>, St
     Ok(records)
 }
 
-/// 题目 id → 批次号与批内下标。
+/// 题目 id → 批次号与批内下标
 struct BatchLookup<'a> {
     batches: &'a [Batch],
     index: HashMap<i64, (usize, usize)>,
@@ -225,7 +225,7 @@ impl Located<'_> {
             .and_then(Value::as_str);
 
         let (kind, answer, my_answer) = match question_type {
-            // 判断题不带选项，答案直接是“对 / 错”；带选项的按普通选择题处理。
+            // 判断题不带选项，答案直接是“对 / 错”；带选项的按普通选择题处理
             5 if options.is_empty() => (
                 QuestionType::Judge,
                 correct.map(judge_choice),
@@ -306,7 +306,7 @@ impl Located<'_> {
         })
     }
 
-    /// 材料是每题自己的字段：按 `materialIndexes` 从本批材料里取，多份用换行拼接。
+    /// 材料是每题自己的字段：按 `materialIndexes` 从本批材料里取，多份用换行拼接
     fn material_html(&self, fb: i64) -> Result<Option<String>, String> {
         let Some(indexes) = self.raw.get("materialIndexes").and_then(Value::as_array) else {
             return Ok(None);
@@ -333,7 +333,7 @@ impl Located<'_> {
     }
 }
 
-/// 选项正文：取第一个带选项的附件。
+/// 选项正文：取第一个带选项的附件
 fn options_html(raw: &Value) -> Vec<String> {
     raw.get("accessories")
         .and_then(Value::as_array)
@@ -350,7 +350,7 @@ fn options_html(raw: &Value) -> Vec<String> {
         .unwrap_or_default()
 }
 
-/// 单选题的 choice 是 0 基下标的逗号列表，逐位映射成字母。
+/// 单选题的 choice 是 0 基下标的逗号列表，逐位映射成字母
 fn letters(choice: &str) -> Result<String, String> {
     let mut out = String::new();
     for part in choice.split(',') {
@@ -368,7 +368,7 @@ fn letters(choice: &str) -> Result<String, String> {
     Ok(out)
 }
 
-/// 判断题没有选项，答案直接是“对 / 错”。
+/// 判断题没有选项，答案直接是“对 / 错”
 fn judge_choice(choice: &str) -> String {
     if choice == "1" { "错" } else { "对" }.to_string()
 }

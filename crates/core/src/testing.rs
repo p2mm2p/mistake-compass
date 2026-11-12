@@ -1,3 +1,7 @@
+//! 端口的内存测试替身。
+//!
+//! 这些类型记录调用顺序与事件，供状态机和视图测试断言。
+
 use std::cell::RefCell;
 use std::collections::{BTreeMap, VecDeque};
 use std::time::Duration;
@@ -10,12 +14,14 @@ use crate::ports::{
 use crate::question::Category;
 use crate::review::ReviewState;
 
+/// 按队列返回预设响应的 `Fetcher` 替身
 pub struct MemoryFetcher {
     responses: RefCell<VecDeque<Result<FetchResponse, String>>>,
     calls: RefCell<Vec<String>>,
 }
 
 impl MemoryFetcher {
+    /// 用预设响应创建；响应耗尽后返回错误
     pub fn new(responses: Vec<Result<FetchResponse, String>>) -> MemoryFetcher {
         MemoryFetcher {
             responses: RefCell::new(responses.into()),
@@ -23,6 +29,7 @@ impl MemoryFetcher {
         }
     }
 
+    /// 按调用顺序返回请求路径
     pub fn calls(&self) -> Vec<String> {
         self.calls.borrow().clone()
     }
@@ -39,12 +46,14 @@ impl Fetcher for MemoryFetcher {
     }
 }
 
+/// 内存题库存储
 pub struct MemoryCorpusStore {
     active: RefCell<Option<CorpusSnapshot>>,
     staged: RefCell<BTreeMap<String, Vec<Category>>>,
 }
 
 impl MemoryCorpusStore {
+    /// 创建带可选活动快照的存储
     pub fn new(active: Option<CorpusSnapshot>) -> MemoryCorpusStore {
         MemoryCorpusStore {
             active: RefCell::new(active),
@@ -86,17 +95,20 @@ impl CorpusStore for MemoryCorpusStore {
     }
 }
 
+/// 内存复盘存储
 pub struct MemoryReviewStore {
     state: RefCell<ReviewState>,
 }
 
 impl MemoryReviewStore {
+    /// 用初始状态创建存储
     pub fn new(state: ReviewState) -> MemoryReviewStore {
         MemoryReviewStore {
             state: RefCell::new(state),
         }
     }
 
+    /// 返回当前复盘状态副本
     pub fn state(&self) -> ReviewState {
         self.state.borrow().clone()
     }
@@ -114,12 +126,14 @@ impl ReviewStore for MemoryReviewStore {
     }
 }
 
+/// 记录每次 sleep 时长的时钟替身
 #[derive(Default)]
 pub struct MemoryClock {
     sleeps: RefCell<Vec<Duration>>,
 }
 
 impl MemoryClock {
+    /// 返回记录的 sleep 时长
     pub fn sleeps(&self) -> Vec<Duration> {
         self.sleeps.borrow().clone()
     }
@@ -132,12 +146,14 @@ impl Clock for MemoryClock {
     }
 }
 
+/// 记录进度事件文本的替身
 #[derive(Default)]
 pub struct MemoryProgress {
     events: RefCell<Vec<String>>,
 }
 
 impl MemoryProgress {
+    /// 返回记录的事件，格式为 `phase:...`、`batch:...` 或 `error:...`
     pub fn events(&self) -> Vec<String> {
         self.events.borrow().clone()
     }
@@ -159,6 +175,7 @@ impl Progress for MemoryProgress {
     }
 }
 
+/// 忽略所有进度事件
 pub struct NoopProgress;
 
 impl Progress for NoopProgress {

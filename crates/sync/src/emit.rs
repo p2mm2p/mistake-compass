@@ -13,18 +13,20 @@ use mc_core::{Category, Number, Question};
 use crate::model::{Node, pick_node};
 use crate::scalar::{keypoints_inline, py_repr_float, scalar_i64, scalar_opt_str, scalar_str};
 
-/// 一个分类文件的落盘结果。
+/// 一个分类文件的落盘结果
 #[derive(Debug, Clone)]
 pub struct CategoryFile {
-    /// 相对 `data/` 的路径，用 `/` 连接。
+    /// 相对 `data/` 的路径，用 `/` 连接
     pub path: String,
-    /// 分类路径，用 `/` 连接。
+    /// 分类路径，用 `/` 连接
     pub category: String,
+    /// 该文件的题数
     pub questions: usize,
+    /// 文件正文的字节数
     pub bytes: usize,
 }
 
-/// 把全部记录按分类树写成文件，返回清单。
+/// 把全部记录按分类树写成文件，返回清单
 pub fn write_tree(
     out: &Path,
     nodes: &[Node],
@@ -44,7 +46,7 @@ pub fn write_tree(
         if members.is_empty() {
             continue;
         }
-        // 不重排：接口默认“新添加在前”，抓取顺序就是题序。
+        // 不重排：接口默认“新添加在前”，抓取顺序就是题序
         let ordered: Vec<&Question> = members.iter().map(|&at| &records[at]).collect();
         let text = emit_file(&ordered, &formatter);
         let relative = relative_path(&node.path);
@@ -84,6 +86,7 @@ fn emit_file(records: &[&Question], formatter: &Formatter) -> String {
     out
 }
 
+/// 把一个分类渲染成 YAML 文件正文，题序保持不变
 pub fn render_category(category: &Category) -> String {
     let records: Vec<&Question> = category.questions.iter().collect();
     emit_file(&records, &Formatter::new(100))
@@ -249,7 +252,7 @@ mod tests {
 
     #[test]
     fn within_file_order_follows_capture_order() {
-        // 文件内不重排：落盘顺序与抓取顺序一致。
+        // 文件内不重排：落盘顺序与抓取顺序一致
         let nodes = build_nodes(&json!([
             {"name": "分类", "questionIds": [30, 20, 10], "children": []}
         ]))
@@ -317,7 +320,7 @@ mod tests {
         std::fs::remove_dir_all(&dir).ok();
     }
 
-    /// 每个测试一个独立目录：并行跑用例时不能共用同一个路径。
+    /// 每个测试一个独立目录：并行跑用例时不能共用同一个路径
     fn tempdir(tag: &str) -> PathBuf {
         let path = std::env::temp_dir().join(format!("mc-emit-test-{tag}-{}", std::process::id()));
         std::fs::remove_dir_all(&path).ok();

@@ -5,20 +5,20 @@
 
 use markup_fmt::config::FormatOptions;
 
-/// 落盘 HTML 的换行策略。
+/// 落盘 HTML 的换行策略
 pub struct Formatter {
     options: FormatOptions,
 }
 
 impl Formatter {
-    /// 按给定的打印宽度构造；宽度只影响折行位置。
+    /// 按给定的打印宽度构造；宽度只影响折行位置
     pub fn new(print_width: usize) -> Formatter {
         let mut options = FormatOptions::default();
         options.layout.print_width = print_width;
         Formatter { options }
     }
 
-    /// 格式化一段抓取原文；无标签或解析失败时原样返回。
+    /// 格式化一段抓取原文；无标签或解析失败时原样返回
     pub fn format(&self, html: &str) -> String {
         if !self.has_tag(html) {
             return html.to_string();
@@ -34,7 +34,7 @@ impl Formatter {
         }
     }
 
-    /// 是否含标签；纯文本片段不进格式化器。
+    /// 是否含标签；纯文本片段不进格式化器
     fn has_tag(&self, html: &str) -> bool {
         let bytes = html.as_bytes();
         let mut i = 0;
@@ -56,7 +56,7 @@ mod tests {
     #[test]
     fn plain_text_is_untouched() {
         let formatter = Formatter::new(100);
-        // 连续空格会被格式化器折叠，纯文本片段必须原样保留。
+        // 连续空格会被格式化器折叠，纯文本片段必须原样保留
         let text = "如影随形  约束  调控";
         assert_eq!(formatter.format(text), text);
         assert_eq!(formatter.format("①<②<①<④"), "①<②<①<④");

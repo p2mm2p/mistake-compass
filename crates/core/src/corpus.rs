@@ -1,29 +1,52 @@
+//! 分类 YAML 解析与目录树构建。
+//!
+//! 解析阶段检查 CR、顶层键、字段类型和取值；树构建只读 `Corpus`，不访问文件系统。
+
 use std::collections::BTreeMap;
 
 use serde_norway::Value;
 
 use crate::question::{Category, Corpus, FIELDS, Question};
 
+/// 目录树里的目录节点
 #[derive(Debug, Clone)]
 pub struct DirNode {
+    /// 目录显示名
     pub name: String,
+    /// 从根目录开始的 `/` 分隔路径
     pub path: String,
+    /// 该目录下的子目录与文件
     pub level: Level,
 }
 
+/// 同一目录层级的内容
 #[derive(Debug, Clone, Default)]
 pub struct Level {
+    /// 子目录，按名称排序
     pub dirs: Vec<DirNode>,
+    /// 分类文件，按文件名排序
     pub files: Vec<FileNode>,
 }
 
+/// 目录树里的分类文件节点
 #[derive(Debug, Clone)]
 pub struct FileNode {
+    /// 文件名，含 `.yaml`
     pub name: String,
+    /// 分类路径，不含 `.yaml`
     pub category: String,
+    /// 该分类的题数
     pub questions: usize,
 }
 
+/// 解析并校验一个分类 YAML 文件。
+///
+/// `path` 是分类路径，不含 `.yaml`。文件必须用 LF，顶层只能有 `questions`，
+/// 且每道题都要通过字段类型和取值范围检查。
+///
+/// # Errors
+///
+/// YAML 语法、顶层结构、字段类型或取值不符合要求时返回错误。
 pub fn parse_category(path: &str, text: &str) -> Result<Category, String> {
     if text.contains('\r') {
         return Err("文件含 CR（应为 LF）".to_string());
@@ -161,10 +184,12 @@ fn type_desc(value: Option<&Value>) -> &'static str {
     }
 }
 
+/// 构建根目录下的目录列表，不返回根层级本身
 pub fn build_tree(corpus: &Corpus) -> Vec<DirNode> {
     build_level(corpus).dirs
 }
 
+/// 构建完整目录树，根节点路径为空
 pub fn build_level(corpus: &Corpus) -> Level {
     let mut root = DirBuilder::default();
     for category in corpus.categories() {

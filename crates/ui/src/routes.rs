@@ -1,4 +1,4 @@
-//! 纯路由：不绑定端口，不读写文件，所有交互只返回 HTML 片段。
+//! 纯路由：不绑定端口，不读写文件，所有交互只返回 HTML 片段
 
 use std::collections::HashMap;
 
@@ -11,10 +11,14 @@ use crate::view::{
 };
 use mc_core::score;
 
+/// 一次页面请求的渲染结果
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UiResponse {
+    /// HTTP 状态码
     pub status: u16,
+    /// 要返回给页面的 HTML 片段
     pub html: String,
+    /// 本次请求是否改变了复盘状态
     pub persist_review: bool,
 }
 
@@ -44,13 +48,17 @@ impl UiResponse {
     }
 }
 
+/// 页面交互状态；持有题库、复盘状态和当前分类的作答顺序
 pub struct UiState {
+    /// 当前题库
     pub corpus: Corpus,
+    /// 当前复盘状态
     pub review: ReviewState,
     order: Option<view::Order>,
 }
 
 impl UiState {
+    /// 用题库和复盘状态创建页面状态
     pub fn new(corpus: Corpus, review: ReviewState) -> UiState {
         UiState {
             corpus,
@@ -59,6 +67,7 @@ impl UiState {
         }
     }
 
+    /// 分发页面请求；未知路由返回 404
     pub fn handle(&mut self, method: &str, target: &str, body: &[u8], now: &str) -> UiResponse {
         let (path, query) = split_target(target);
         let method = method.to_ascii_uppercase();
@@ -246,10 +255,10 @@ impl UiState {
     }
 
     fn order_for(&mut self, cat: &str) -> Option<view::Order> {
-        if let Some(order) = &self.order {
-            if order.cat == cat {
-                return Some(order.clone());
-            }
+        if let Some(order) = &self.order
+            && order.cat == cat
+        {
+            return Some(order.clone());
         }
         self.refresh_order(cat)
     }
@@ -276,6 +285,7 @@ impl UiState {
     }
 }
 
+/// 分发页面请求，与 `UiState::handle` 等价
 pub fn handle(
     state: &mut UiState,
     method: &str,
@@ -435,9 +445,7 @@ mod tests {
     #[test]
     fn answer_updates_review_and_marks_persistence() {
         let mut state = state();
-        state
-            .handle("GET", "/open?cat=%E7%94%B2", b"", "now")
-            .status;
+        state.handle("GET", "/open?cat=%E7%94%B2", b"", "now");
         let response = state.handle(
             "POST",
             "/answer?cat=%E7%94%B2&fb=1",
@@ -462,9 +470,7 @@ mod tests {
     #[test]
     fn mark_and_reviewed_are_rendered() {
         let mut state = state();
-        state
-            .handle("GET", "/open?cat=%E7%94%B2", b"", "now")
-            .status;
+        state.handle("GET", "/open?cat=%E7%94%B2", b"", "now");
         let marked = state.handle(
             "GET",
             "/mark?cat=%E7%94%B2&fb=1&to=%E5%B7%B2%E5%A4%8D%E7%9B%98",
