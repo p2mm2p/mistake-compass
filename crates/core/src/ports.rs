@@ -1,6 +1,6 @@
 //! 业务 crate 使用的异步边界与进度回调。
 //!
-//! 所有 trait 都不绑定浏览器类型，宿主可选择 IndexedDB、HTTP 或内存存储。
+//! 所有 trait 只定义契约，不绑定具体类型，宿主可通过实现 `CorpusStore` trait 选择具体存储方式。
 
 use std::time::Duration;
 
